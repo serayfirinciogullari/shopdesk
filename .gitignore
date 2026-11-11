@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+build/
+.react-router/
+*.log
+.DS_Store
+
+# Kişisel notlar (yerelde kalır, repoya girmez)
+DEVIR_NOTU.md
+LOOKFOR_ARASTIRMA.md
