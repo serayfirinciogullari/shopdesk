@@ -8,7 +8,8 @@
     "typecheck": "react-router typegen && tsc",
     "check": "tsx scripts/check-connections.ts",
     "seed": "tsx scripts/seed.ts",
-    "traces": "tsx scripts/last-traces.ts"
+    "traces": "tsx scripts/last-traces.ts",
+    "eval": "tsx scripts/eval/run.ts"
   },
   "type": "module",
   "private": "true",

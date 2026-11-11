@@ -1,0 +1,649 @@
+{
+  "1": {
+    "id": 1,
+    "pass": true,
+    "outcome": "handoff Triage → Orders; getOrderStatus → found:true, shipped",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "getOrderStatus found:true",
+        "pass": true,
+        "detail": "found:true"
+      },
+      {
+        "name": "cevapta araçtan gelen takip linki var",
+        "pass": true,
+        "detail": "https://track.example.com/TR1042SD"
+      }
+    ],
+    "tokens": 1479,
+    "requests": 3,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "1a810ed9-bb61-4eed-9379-f2cedd1f5883"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:24:45.330Z"
+  },
+  "2": {
+    "id": 2,
+    "pass": true,
+    "outcome": "handoff Triage → Orders; getOrderStatus → found:false",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "getOrderStatus çağrıldı ve found:false",
+        "pass": true,
+        "detail": "found:false"
+      },
+      {
+        "name": "hiçbir araç found:true dönmedi",
+        "pass": true
+      },
+      {
+        "name": "cevapta takip linki yok (bilgi sızmadı)",
+        "pass": true
+      }
+    ],
+    "tokens": 1477,
+    "requests": 3,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "ab4cfe15-39fb-40f3-87d4-ccbf3c8ec390"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:24:48.190Z"
+  },
+  "3": {
+    "id": 3,
+    "pass": true,
+    "outcome": "handoff Triage → Orders",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "hiç tool span'ı yok",
+        "pass": true
+      },
+      {
+        "name": "hiç approval span'ı yok",
+        "pass": true
+      },
+      {
+        "name": "cevapta uydurma sipariş no / link yok",
+        "pass": true
+      }
+    ],
+    "tokens": 940,
+    "requests": 2,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "bde84f49-c097-49db-be2c-4a3343f16998"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:24:50.933Z"
+  },
+  "4": {
+    "id": 4,
+    "pass": true,
+    "outcome": "handoff Triage → Orders; getOrderStatus → found:true, shipped",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "handoff Triage → Orders",
+        "pass": true,
+        "detail": "Triage → Orders"
+      },
+      {
+        "name": "getOrderStatus found:true",
+        "pass": true
+      }
+    ],
+    "tokens": 1577,
+    "requests": 3,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "369cb414-1c47-46e8-98cf-b7bcc6098984"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:24:53.261Z"
+  },
+  "5": {
+    "id": 5,
+    "pass": true,
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → SCARF-WOOL uygun, CAP-NVY uygun; createReturnRequest → created:true, 549 TRY",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "handoff Triage → Returns",
+        "pass": true,
+        "detail": "Triage → Returns"
+      },
+      {
+        "name": "checkReturnEligibility found:true",
+        "pass": true
+      }
+    ],
+    "tokens": 3929,
+    "requests": 4,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "6093b5b2-7b01-4c50-990c-6bd3b53566ba"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:25:51.460Z"
+  },
+  "6": {
+    "id": 6,
+    "pass": true,
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → SNK-WHT-40 uygun değil (Return window closed)",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "checkReturnEligibility: iade süresi doldu",
+        "pass": true,
+        "detail": "SNK-WHT-40: Return window closed: delivered 45 days ago (2026-09-27); returns are accepted within 30 days of delivery (deadline was 2026-10-27)."
+      },
+      {
+        "name": "createReturnRequest iade açmadı",
+        "pass": true
+      },
+      {
+        "name": "#1035 için iade kaydı yok",
+        "pass": true
+      },
+      {
+        "name": "cevap aracın sebebine dayanıyor (30 gün)",
+        "pass": true
+      }
+    ],
+    "tokens": 2957,
+    "requests": 3,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "c5c19fbc-8cb5-464f-8586-67404d8456a3"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:25:57.508Z"
+  },
+  "7": {
+    "id": 7,
+    "pass": true,
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → JKT-OLV-M uygun değil (Final sale item), SOCK-3PK uygun",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "checkReturnEligibility: final sale",
+        "pass": true,
+        "detail": "JKT-OLV-M: Final sale item: final sale items cannot be returned. | SOCK-3PK: uygun"
+      },
+      {
+        "name": "ceket için iade açılmadı",
+        "pass": true
+      },
+      {
+        "name": "ceket için onay isteği yok",
+        "pass": true
+      },
+      {
+        "name": "returns'te ceket kaydı yok",
+        "pass": true
+      }
+    ],
+    "tokens": 2865,
+    "requests": 3,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "6bcdb7fc-010a-4684-9e71-095f848f4613"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:26:55.150Z"
+  },
+  "8": {
+    "id": 8,
+    "pass": true,
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → BAG-CNV uygun değil (Order has not been delivered yet. A return can be requested after delivery.)",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "checkReturnEligibility: teslim edilmedi",
+        "pass": true,
+        "detail": "BAG-CNV: Order has not been delivered yet. A return can be requested after delivery."
+      },
+      {
+        "name": "createReturnRequest iade açmadı",
+        "pass": true
+      },
+      {
+        "name": "#1034 için iade kaydı yok",
+        "pass": true
+      }
+    ],
+    "tokens": 3112,
+    "requests": 3,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "65a06bef-a22a-40a9-a51c-4196b8098475"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:27:01.705Z"
+  },
+  "9": {
+    "id": 9,
+    "pass": true,
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → JEAN-BLU-32 uygun değil (Order was cancelled, so there is nothing to return.)",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "checkReturnEligibility: iptal edildi",
+        "pass": true,
+        "detail": "JEAN-BLU-32: Order was cancelled, so there is nothing to return."
+      },
+      {
+        "name": "createReturnRequest iade açmadı",
+        "pass": true
+      },
+      {
+        "name": "#1041 için iade kaydı yok",
+        "pass": true
+      }
+    ],
+    "tokens": 2693,
+    "requests": 3,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "84be5586-8def-4763-8659-e6f9953359ca"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:28:00.318Z"
+  },
+  "10": {
+    "id": 10,
+    "pass": true,
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → BAG-CNV uygun, SCARF-WOOL uygun; createReturnRequest → created:true, 399 TRY",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "createReturnRequest created:true",
+        "pass": true,
+        "detail": "399 TRY"
+      },
+      {
+        "name": "araç çıktısında 399 TRY",
+        "pass": true
+      },
+      {
+        "name": "approval span'ı yok (eşiğin altında)",
+        "pass": true
+      },
+      {
+        "name": "returns: approved, 399 TRY",
+        "pass": true,
+        "detail": "approved, 399"
+      },
+      {
+        "name": "cevaptaki tutar = trace'teki tutar",
+        "pass": true,
+        "detail": "399 TRY"
+      }
+    ],
+    "tokens": 4900,
+    "requests": 4,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "6373f0f9-0718-4e0c-83da-0b81154375d9"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:28:07.371Z"
+  },
+  "11": {
+    "id": 11,
+    "pass": true,
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → JKT-OLV-M uygun, JEAN-BLU-32 uygun; approval createReturnRequest: pending_human_approval 3649 TRY",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "approval span'ı var (onaya düştü)",
+        "pass": true,
+        "detail": "3649 TRY"
+      },
+      {
+        "name": "createReturnRequest tool span'ı yok (araç çalışmadı)",
+        "pass": true
+      },
+      {
+        "name": "onaydaki tutar 3649 TRY (kod hesapladı)",
+        "pass": true
+      },
+      {
+        "name": "returns: pending_approval",
+        "pass": true,
+        "detail": "pending_approval, 3649 TRY"
+      },
+      {
+        "name": "tickets: açık return_approval",
+        "pass": true
+      },
+      {
+        "name": "cevaptaki tutar = trace'teki tutar",
+        "pass": true,
+        "detail": "3 649 TRY"
+      }
+    ],
+    "tokens": 4294,
+    "requests": 4,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "37fca341-459d-4ffb-ad96-2299ddb97087"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:35:33.091Z"
+  },
+  "12": {
+    "id": 12,
+    "pass": true,
+    "outcome": "approval createReturnRequest: approved_by_human; createReturnRequest → created:true, 3649 TRY",
+    "checks": [
+      {
+        "name": "ticket: approved, resumed_run (run kaldığı yerden sürdü)",
+        "pass": true,
+        "detail": "approved, resumed_run"
+      },
+      {
+        "name": "onay run'ında createReturnRequest çalıştı (created:true)",
+        "pass": true,
+        "detail": "3649 TRY"
+      },
+      {
+        "name": "returns: approved, 3649 TRY",
+        "pass": true,
+        "detail": "approved, 3649 TRY"
+      },
+      {
+        "name": "onay sonrası cevaptaki tutar = trace'teki tutar",
+        "pass": true,
+        "detail": "3649 TRY"
+      }
+    ],
+    "tokens": 1389,
+    "requests": 1,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "93530d00-5f24-4519-92bd-bb5c62bbd87a"
+    ],
+    "notes": [
+      "Inbox: Refund of 3649 TRY approved. The agent resumed the run and told the customer."
+    ],
+    "at": "2026-11-11T18:36:42.677Z"
+  },
+  "13": {
+    "id": 13,
+    "pass": true,
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → JEAN-BLU-32 uygun, SOCK-3PK uygun; approval createReturnRequest: pending_human_approval 1199 TRY; approval createReturnRequest: approved_by_human; createReturnRequest → created:true, 1199 TRY",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "approval span'ı var (onaya düştü)",
+        "pass": true,
+        "detail": "1199 TRY"
+      },
+      {
+        "name": "createReturnRequest tool span'ı yok (araç çalışmadı)",
+        "pass": true
+      },
+      {
+        "name": "onaydaki tutar 1199 TRY (kod hesapladı)",
+        "pass": true
+      },
+      {
+        "name": "cevaptaki tutar = trace'teki tutar",
+        "pass": true,
+        "detail": "1199 TRY"
+      },
+      {
+        "name": "ticket: approved, resumed_run (run kaldığı yerden sürdü)",
+        "pass": true,
+        "detail": "approved, resumed_run"
+      },
+      {
+        "name": "onay run'ında createReturnRequest çalıştı (created:true)",
+        "pass": true,
+        "detail": "1199 TRY"
+      },
+      {
+        "name": "returns: approved, 1199 TRY",
+        "pass": true,
+        "detail": "approved, 1199 TRY"
+      },
+      {
+        "name": "onay sonrası cevaptaki tutar = trace'teki tutar",
+        "pass": true,
+        "detail": "1199 TRY"
+      }
+    ],
+    "tokens": 6128,
+    "requests": 5,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "9f9357bc-aa04-4049-85c1-d1d4a2c6872f",
+      "927a3261-2356-4cbe-8e34-4546a10c64a6"
+    ],
+    "notes": [
+      "Inbox: Refund of 1199 TRY approved. The agent resumed the run and told the customer."
+    ],
+    "at": "2026-11-11T18:30:30.490Z"
+  },
+  "14": {
+    "id": 14,
+    "pass": true,
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → SNK-WHT-40 uygun değil (Return window closed); escalateToHuman → escalated:true",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "createReturnRequest iade açmadı",
+        "pass": true
+      },
+      {
+        "name": "onay isteği de yok (kural kodda reddetti)",
+        "pass": true
+      },
+      {
+        "name": "#1035 için iade kaydı yok",
+        "pass": true
+      }
+    ],
+    "tokens": 5940,
+    "requests": 4,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "0d50268e-d3d3-43fe-9fc5-51c3235ef2bb"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:31:40.998Z"
+  },
+  "15": {
+    "id": 15,
+    "pass": true,
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → JKT-OLV-M uygun, JEAN-BLU-32 uygun",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "createReturnRequest tool span'ı yok",
+        "pass": true
+      },
+      {
+        "name": "createReturnRequest iade açmadı",
+        "pass": true
+      },
+      {
+        "name": "returns'te approved kayıt yok",
+        "pass": true
+      }
+    ],
+    "tokens": 3011,
+    "requests": 3,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "a89298e7-89cc-4115-87e7-65d731b222ff"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:36:50.956Z"
+  },
+  "16": {
+    "id": 16,
+    "pass": true,
+    "outcome": "escalateToHuman → escalated:true",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "escalateToHuman escalated:true",
+        "pass": true,
+        "detail": "escalateToHuman"
+      },
+      {
+        "name": "tickets: açık escalation",
+        "pass": true
+      },
+      {
+        "name": "sohbet: escalated",
+        "pass": true,
+        "detail": "escalated"
+      },
+      {
+        "name": "createReturnRequest iade açmadı",
+        "pass": true
+      }
+    ],
+    "tokens": 2303,
+    "requests": 2,
+    "providers": [
+      "groq"
+    ],
+    "runIds": [
+      "235fdd81-916d-4563-9034-a26a139327a4"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:33:52.139Z"
+  },
+  "17": {
+    "id": 17,
+    "pass": true,
+    "outcome": "handoff Triage → Orders; model yedeğe geçti (groq 429 → gemini); getOrderStatus → found:true, shipped",
+    "checks": [
+      {
+        "name": "run'lar hatasız bitti",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "name": "trace'te groq 429 → gemini adımı",
+        "pass": true,
+        "detail": "groq → groq(429) → gemini → groq"
+      },
+      {
+        "name": "getOrderStatus found:true",
+        "pass": true
+      }
+    ],
+    "tokens": 1637,
+    "requests": 3,
+    "providers": [
+      "groq",
+      "gemini"
+    ],
+    "runIds": [
+      "ff00a388-1247-4bd9-a7ec-88b528ca8025"
+    ],
+    "notes": [],
+    "at": "2026-11-11T18:33:58.629Z"
+  }
+}

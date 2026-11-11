@@ -4,7 +4,16 @@
  * bağlantı adresi ve şifre sunucuda kalır.
  */
 import "dotenv/config";
+import dns from "node:dns";
 import { MongoClient, type Db } from "mongodb";
+
+// Bazı ağlarda (ör. telefon hotspot'u) Node yalnızca 127.0.0.1'i DNS sunucusu olarak
+// görüyor ve Atlas'ın SRV kaydı (mongodb+srv://) çözülemiyor (querySrv ECONNREFUSED).
+// O durumda sadece bu işlem için açık DNS sunucularını kullan; sistem ayarına dokunulmaz.
+const dnsServers = dns.getServers();
+if (dnsServers.length > 0 && dnsServers.every((s) => s === "127.0.0.1" || s === "::1")) {
+  dns.setServers(["1.1.1.1", "8.8.8.8"]);
+}
 import type { Conversation, Order, ReturnRequest, Ticket, Trace } from "./types";
 
 declare global {

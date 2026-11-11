@@ -11,7 +11,7 @@ import { data, Link, useFetcher } from "react-router";
 import { ObjectId } from "mongodb";
 import type { Route } from "./+types/chat";
 import { collections } from "~/lib/db.server";
-import { runAgent } from "~/agents/run.server";
+import { sendCustomerMessage } from "~/lib/chat.server";
 import type { Message } from "~/lib/types";
 
 const MAX_LEN = 1000;
@@ -42,29 +42,9 @@ export async function action({ request, params }: Route.ActionArgs) {
   if (!text) return data({ error: "Please type a message." }, { status: 400 });
   if (text.length > MAX_LEN) return data({ error: `Messages can be at most ${MAX_LEN} characters.` }, { status: 400 });
 
-  const convos = collections.conversations();
-  const customerMsg: Message = { role: "customer", text, at: new Date() };
-  // $push: document'ın içindeki diziye eleman ekler (SQL'de ayrı tabloya INSERT yerine).
-  const convo = await convos.findOneAndUpdate(
-    { _id },
-    { $push: { messages: customerMsg }, $set: { updatedAt: new Date() } },
-    { returnDocument: "after" },
-  );
-  if (!convo) throw data("Conversation not found", { status: 404 });
-
-  // Sohbet insana devredildiyse bot artık cevap vermez; mesaj kaydedilir,
-  // temsilci Inbox'tan (Aşama 3) görür.
-  if (convo.status === "escalated") return { ok: true };
-
-  const reply = await runAgent(_id, convo.messages);
-
-  await convos.updateOne(
-    { _id },
-    {
-      $push: { messages: { role: "agent", text: reply.text, at: new Date(), runId: reply.runId } },
-      $set: { updatedAt: new Date() },
-    },
-  );
+  // İş mantığı chat.server.ts'te; eval de aynı fonksiyonu kullanır.
+  const result = await sendCustomerMessage(_id, text);
+  if (result.status === "not_found") throw data("Conversation not found", { status: 404 });
   return { ok: true };
 }
 
