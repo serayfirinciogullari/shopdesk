@@ -51,7 +51,7 @@ export interface Conversation {
 
 /** Bir run'ın tek adımı. */
 export interface Span {
-  type: "agent" | "handoff" | "tool" | "guardrail" | "model";
+  type: "agent" | "handoff" | "tool" | "guardrail" | "model" | "approval";
   name: string;
   input?: unknown;
   output?: unknown;
@@ -74,8 +74,49 @@ export interface Trace {
   lastAgent?: string;
   status: "ok" | "error";
   error?: string;
+  /** Run bir araç onayı (needsApproval) yüzünden durduysa true. */
+  interrupted?: boolean;
   startedAt: Date;
   durationMs: number;
   usage: { requests: number; inputTokens: number; outputTokens: number; totalTokens: number };
   spans: Span[];
+}
+
+/**
+ * İade talebi: bir iş kaydı (siparişe bağlı, kendi yaşam döngüsü var).
+ * Tutar her zaman kodda, sipariş verisinden hesaplanır; model tutar göndermez.
+ */
+export type ReturnStatus = "approved" | "pending_approval" | "rejected";
+
+export interface ReturnRequest {
+  _id?: ObjectId;
+  conversationId: ObjectId;
+  runId: string;
+  orderNumber: string;
+  items: { sku: string; name: string; qty: number; price: number }[];
+  amount: number;
+  currency: "TRY";
+  reason: string;
+  status: ReturnStatus;
+  createdAt: Date;
+  decidedAt?: Date;
+}
+
+/** Ticket: "bir insan baksın" iş listesi (Inbox, Aşama 3). */
+export type TicketKind = "escalation" | "return_approval";
+
+export interface Ticket {
+  _id?: ObjectId;
+  kind: TicketKind;
+  conversationId: ObjectId;
+  runId: string;
+  reason: string;
+  summary: string;
+  suggestedAction?: string;
+  returnId?: ObjectId; // return_approval ise bağlı iade talebi
+  /** Onay bekleyen araç çağrısı: Aşama 3'te Inbox'tan run'ı devam ettirmek için. */
+  pendingToolCall?: { toolName: string; callId?: string; arguments: string; agent: string };
+  runState?: string; // RunState.toString()
+  status: "open" | "approved" | "rejected";
+  createdAt: Date;
 }

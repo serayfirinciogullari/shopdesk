@@ -5,7 +5,7 @@
  */
 import "dotenv/config";
 import { MongoClient, type Db } from "mongodb";
-import type { Conversation, Order, Trace } from "./types";
+import type { Conversation, Order, ReturnRequest, Ticket, Trace } from "./types";
 
 declare global {
   // Geliştirmede dosya her kaydedildiğinde modül yeniden yüklenir; bağlantıyı
@@ -31,6 +31,8 @@ export const collections = {
   orders: () => getDb().collection<Order>("orders"),
   conversations: () => getDb().collection<Conversation>("conversations"),
   traces: () => getDb().collection<Trace>("traces"),
+  returns: () => getDb().collection<ReturnRequest>("returns"),
+  tickets: () => getDb().collection<Ticket>("tickets"),
 };
 
 export async function closeDb() {

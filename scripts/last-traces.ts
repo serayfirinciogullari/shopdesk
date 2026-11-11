@@ -14,7 +14,7 @@ try {
       const extra =
         s.type === "model"
           ? `${s.provider}/${s.model}${s.fallbackReason ? ` (fallback: ${s.fallbackReason})` : ""}${s.tokens ? ` · ${s.tokens.total} token` : ""}${s.error ? ` · HATA: ${s.error}` : ""}`
-          : s.type === "tool"
+          : s.type === "tool" || s.type === "approval"
             ? `${JSON.stringify(s.input)} → ${JSON.stringify(s.output)}`
             : "";
       console.log(`   · ${s.type.padEnd(7)} ${s.name}  ${s.durationMs} ms  ${extra}`);

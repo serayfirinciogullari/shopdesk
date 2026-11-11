@@ -52,6 +52,10 @@ export async function action({ request, params }: Route.ActionArgs) {
   );
   if (!convo) throw data("Conversation not found", { status: 404 });
 
+  // Sohbet insana devredildiyse bot artık cevap vermez; mesaj kaydedilir,
+  // temsilci Inbox'tan (Aşama 3) görür.
+  if (convo.status === "escalated") return { ok: true };
+
   const reply = await runAgent(_id, convo.messages);
 
   await convos.updateOne(
@@ -102,7 +106,12 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
           <Bubble key={i} role={m.role} text={m.text} />
         ))}
         {pendingText && <Bubble role="customer" text={pendingText} />}
-        {sending && <p className="text-sm text-gray-400">Typing…</p>}
+        {sending && loaderData.status !== "escalated" && <p className="text-sm text-gray-400">Typing…</p>}
+        {loaderData.status === "escalated" && (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            You've been transferred to a support agent. A team member will reply here.
+          </p>
+        )}
         <div ref={bottomRef} />
       </section>
 
@@ -148,7 +157,8 @@ function Bubble({ role, text }: { role: Message["role"]; text: string }) {
 /** Ajan cevabındaki takip linklerini tıklanabilir yapar. */
 function Linkified({ text }: { text: string }) {
   // Sondaki noktalama URL'ye dahil edilmez: "…/TR1042SD." → link "…/TR1042SD"
-  const parts = text.split(/(https?:\/\/[^\s)]*[^\s).,!?;:])/g);
+  // Model bazen linki <…> içine alıyor; açılı parantezler de URL'ye dahil edilmez.
+  const parts = text.split(/(https?:\/\/[^\s)<>]*[^\s).,!?;:<>])/g);
   return (
     <>
       {parts.map((p, i) =>
