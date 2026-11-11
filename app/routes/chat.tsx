@@ -208,7 +208,8 @@ function Linkified({ text }: { text: string }) {
             {p}
           </a>
         ) : (
-          p
+          // Model bazen Markdown kalın yazıyor ("**3649 TRY**"): yıldızları göstermek yerine kalın yaz.
+          p.split(/\*\*([^*\n]+)\*\*/g).map((q, j) => (j % 2 === 1 ? <strong key={`${i}-${j}`}>{q}</strong> : q))
         ),
       )}
     </>
