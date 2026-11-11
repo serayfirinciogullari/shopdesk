@@ -76,6 +76,8 @@ export interface Trace {
   error?: string;
   /** Run bir araç onayı (needsApproval) yüzünden durduysa true. */
   interrupted?: boolean;
+  /** Inbox onayıyla sürdürülen run ise, durduğu ilk run. */
+  resumedFrom?: string;
   startedAt: Date;
   durationMs: number;
   usage: { requests: number; inputTokens: number; outputTokens: number; totalTokens: number };
@@ -100,6 +102,8 @@ export interface ReturnRequest {
   status: ReturnStatus;
   createdAt: Date;
   decidedAt?: Date;
+  /** Inbox onayından sonra aracı çalıştıran run. */
+  approvedRunId?: string;
 }
 
 /** Ticket: "bir insan baksın" iş listesi (Inbox, Aşama 3). */
@@ -117,6 +121,18 @@ export interface Ticket {
   /** Onay bekleyen araç çağrısı: Aşama 3'te Inbox'tan run'ı devam ettirmek için. */
   pendingToolCall?: { toolName: string; callId?: string; arguments: string; agent: string };
   runState?: string; // RunState.toString()
-  status: "open" | "approved" | "rejected";
+  status: TicketStatus;
   createdAt: Date;
+  decidedAt?: Date;
+  /** Çift tıklamaya karşı kilit: karar işlenirken dolu. */
+  processingAt?: Date;
+  /**
+   * Onay nasıl uygulandı: "resumed_run" = kayıtlı run kaldığı yerden onayla
+   * sürdürüldü (araç gerçekten çalıştı); "direct_update" = kod kaydı doğrudan güncelledi.
+   */
+  resolution?: "resumed_run" | "direct_update" | "closed";
+  resolutionRunId?: string;
+  resolutionError?: string;
 }
+
+export type TicketStatus = "open" | "approved" | "rejected";

@@ -9,7 +9,7 @@
  * Filtre handoff kaydını `newItems`'tan da sildiği için handoff span'ı
  * `runner.on("agent_handoff")` olayından kaydediliyor.
  */
-import { Agent, Runner, assistant, handoff, user, type AgentInputItem, type RunResult } from "@openai/agents";
+import { Agent, RunContext, RunState, Runner, assistant, handoff, user, type AgentInputItem, type RunResult } from "@openai/agents";
 import { removeAllTools } from "@openai/agents-core/extensions";
 import type { ObjectId } from "mongodb";
 import { FallbackModel } from "~/lib/llm.server";
@@ -50,6 +50,7 @@ const RETURNS_INSTRUCTIONS = `You are the returns assistant of ShopDesk, an onli
 - Always call checkReturnEligibility before saying whether something can be returned. Only give reasons the tool returned; never offer exceptions.
 - If the customer wants to return eligible items, call createReturnRequest with those SKUs. Only say a return is created if the tool returned created: true.
 - If a tool says the request needs human approval, tell the customer a team member will review it; it is NOT refunded yet.
+- Copy amounts exactly as the tool returned them (e.g. "1199 TRY"); never reformat or recalculate them.
 - If the item arrived damaged, defective or wrong, or the customer is angry or upset, call escalateToHuman instead of solving it yourself.
 - If you are not sure what to do, call escalateToHuman.
 ${NO_OVERRIDE}
@@ -57,6 +58,8 @@ ${LANGUAGE_RULE}`;
 
 // Ajanlar her run'da yeniden kurulur (ucuz bir işlem): model sarmalayıcısı o run'ın
 // kayıt defterini tutsun, eşzamanlı sohbetler birbirine karışmasın diye.
+// Inbox onayı da kayıtlı run'ı bu fonksiyonun kurduğu ajanlarla açar: SDK, kayıttaki
+// ajan ve araç isimlerini buradakilerle eşleştirir, bu yüzden isimler sabit kalmalı.
 function buildAgents(recorder: RunRecorder) {
   const orders = new Agent<ShopContext>({
     name: "Orders",
@@ -148,15 +151,11 @@ async function handleInterruptions(
   return { result, interrupted };
 }
 
-/** `history` müşterinin son mesajını da içerir. */
-export async function runAgent(conversationId: ObjectId, history: Message[]): Promise<AgentReply> {
-  const recorder = new RunRecorder();
-  const { entry } = buildAgents(recorder);
-  const ctx: ShopContext = { conversationId, runId: recorder.runId };
-  const lastCustomerText = [...history].reverse().find((m) => m.role === "customer")?.text ?? "";
-
-  // Runner: SDK'nın ajan döngüsünü çalıştıran motor. Olaylarını dinleyerek her
-  // ajanın, handoff'un ve aracın ne zaman başlayıp bittiğini deftere yazıyoruz.
+/**
+ * Runner: SDK'nın ajan döngüsünü çalıştıran motor. Olaylarını dinleyerek her
+ * ajanın, handoff'un ve aracın ne zaman başlayıp bittiğini deftere yazıyoruz.
+ */
+function createRunner(recorder: RunRecorder) {
   const runner = new Runner();
   runner.on("agent_start", (_ctx, agent) => {
     recorder.add({ type: "agent", name: agent.name, startedAt: new Date(), durationMs: 0 });
@@ -173,6 +172,17 @@ export async function runAgent(conversationId: ObjectId, history: Message[]): Pr
     const callId = "callId" in toolCall ? toolCall.callId : (toolCall.id ?? tool.name);
     recorder.toolEnd(callId, result);
   });
+  return runner;
+}
+
+/** `history` müşterinin son mesajını da içerir. */
+export async function runAgent(conversationId: ObjectId, history: Message[]): Promise<AgentReply> {
+  const recorder = new RunRecorder();
+  const { entry } = buildAgents(recorder);
+  const ctx: ShopContext = { conversationId, runId: recorder.runId };
+  const lastCustomerText = [...history].reverse().find((m) => m.role === "customer")?.text ?? "";
+
+  const runner = createRunner(recorder);
 
   try {
     const first = await runner.run(entry, toAgentInput(history), { maxTurns: MAX_TURNS, context: ctx });
@@ -201,6 +211,88 @@ export async function runAgent(conversationId: ObjectId, history: Message[]): Pr
       })
       .catch((err) => console.error("[runAgent] trace save failed", err));
     return { text: FRIENDLY_ERROR, runId: recorder.runId, ok: false };
+  }
+}
+
+/**
+ * Inbox onayı, yol (a): durmuş run'ı kaldığı yerden, bu kez "onaylandı" diyerek sürdürür.
+ *
+ * Ticket'taki `runState`, run'ın onay beklediği andaki fotoğrafıdır (oyundaki kayıt
+ * noktası gibi). Onu aynı isimli ajanlarla açıyor, bekleyen çağrıyı onaylıyor ve
+ * run'ı devam ettiriyoruz: `createReturnRequest` gerçekten çalışır, uygunluğu yeniden
+ * kontrol eder, ikinci kilidi (`isToolApproved`) geçer ve model müşteriye sonucu yazar.
+ *
+ * `fromStringWithContext`: kayıttaki context JSON'dan döner (ObjectId düz metne
+ * dönüşmüş olur); biz gerçek `ShopContext`'i veriyoruz, SDK onay bilgilerini birleştirir.
+ */
+export async function resumeApprovedReturn(args: {
+  conversationId: ObjectId;
+  runState: string;
+  returnId: ObjectId;
+  ticketId: ObjectId;
+  originalRunId: string;
+  callId?: string;
+}): Promise<AgentReply & { toolExecuted: boolean }> {
+  const recorder = new RunRecorder();
+  const { entry } = buildAgents(recorder);
+  const ctx: ShopContext = { conversationId: args.conversationId, runId: recorder.runId, approvingReturnId: args.returnId };
+  const runner = createRunner(recorder);
+  const input = `[Inbox] Team member approved the pending refund (ticket ${args.ticketId.toHexString()}).`;
+
+  try {
+    const state = await RunState.fromStringWithContext(entry, args.runState, new RunContext<ShopContext>(ctx));
+    const pending = state.getInterruptions();
+    const item = pending.find((i) => "callId" in i.rawItem && i.rawItem.callId === args.callId) ?? pending[0];
+    if (!item || item.name !== "createReturnRequest") throw new Error("No pending createReturnRequest call in the saved run state");
+
+    recorder.add({
+      type: "approval",
+      name: item.name,
+      input: safeJson(item.arguments ?? ""),
+      output: { status: "approved_by_human", ticketId: args.ticketId.toHexString(), returnId: args.returnId.toHexString() },
+      startedAt: new Date(),
+      durationMs: 0,
+    });
+    state.approve(item);
+
+    let result = await runner.run(entry, state, { maxTurns: MAX_TURNS });
+    if (result.interruptions?.length) {
+      // Beklenmez (aynı çağrı onaylandı); olursa yeni onayları güvenli tarafta reddet.
+      for (const extra of result.interruptions) {
+        result.state.reject(extra, { alwaysReject: true, message: "NOT EXECUTED. Do not create another return request." });
+      }
+      result = await runner.run(entry, result.state, { maxTurns: MAX_TURNS });
+    }
+
+    const toolExecuted = recorder.spans.some(
+      (s) => s.type === "tool" && s.name === "createReturnRequest" && (s.output as { created?: boolean } | undefined)?.created === true,
+    );
+    const text = String(result.finalOutput ?? "").trim();
+    const u = result.state.usage;
+    await recorder.save({
+      conversationId: args.conversationId,
+      input,
+      finalOutput: text,
+      lastAgent: result.lastAgent?.name,
+      status: "ok",
+      resumedFrom: args.originalRunId,
+      usage: { requests: u.requests, inputTokens: u.inputTokens, outputTokens: u.outputTokens, totalTokens: u.totalTokens },
+    });
+    return { text, runId: recorder.runId, ok: toolExecuted && !!text, toolExecuted };
+  } catch (e) {
+    console.error("[resumeApprovedReturn]", e);
+    await recorder
+      .save({
+        conversationId: args.conversationId,
+        input,
+        status: "error",
+        error: (e as Error).message,
+        resumedFrom: args.originalRunId,
+        usage: { requests: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+      })
+      .catch((err) => console.error("[resumeApprovedReturn] trace save failed", err));
+    // Araç run çökmeden önce çalışmış olabilir; çağıran `returns` kaydına bakarak karar verir.
+    return { text: "", runId: recorder.runId, ok: false, toolExecuted: false };
   }
 }
 

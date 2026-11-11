@@ -18,6 +18,12 @@ import type { Order, OrderItem } from "~/lib/types";
 export interface ShopContext {
   conversationId: ObjectId;
   runId: string;
+  /**
+   * Yalnızca Inbox'tan onaylanan bir run'da: onaylanan bekleyen iade kaydı.
+   * Uygunluk kontrolü bu kaydı "zaten iade var" saymaz ve araç yeni kayıt açmak
+   * yerine bu kaydı `approved` yapar. Model bunu göremez ve değiştiremez.
+   */
+  approvingReturnId?: ObjectId;
 }
 
 function shopContext(ctx?: RunContext<unknown>): ShopContext {
@@ -115,11 +121,17 @@ interface ItemVerdict {
  * İade uygunluğu: demonun asıl kuralı. Hem checkReturnEligibility hem
  * createReturnRequest bunu çağırır; ikincisi modelin önceki sonucuna güvenmez.
  */
-async function evaluateReturn(order: Order, now = new Date()): Promise<ItemVerdict[]> {
-  // Bu ürünler için zaten açık ya da onaylı bir iade var mı?
+async function evaluateReturn(order: Order, opts: { excludeReturnId?: ObjectId; now?: Date } = {}): Promise<ItemVerdict[]> {
+  const now = opts.now ?? new Date();
+  // Bu ürünler için zaten açık ya da onaylı bir iade var mı? (Inbox'ta onaylanan
+  // bekleyen kaydın kendisi sayılmaz; yoksa onay kendi kaydına takılırdı.)
   const existing = await collections
     .returns()
-    .find({ orderNumber: order.orderNumber, status: { $in: ["approved", "pending_approval"] } })
+    .find({
+      orderNumber: order.orderNumber,
+      status: { $in: ["approved", "pending_approval"] },
+      ...(opts.excludeReturnId ? { _id: { $ne: opts.excludeReturnId } } : {}),
+    })
     .toArray();
   const alreadyReturned = new Set(existing.flatMap((r) => r.items.map((i) => i.sku)));
 
@@ -179,10 +191,10 @@ const createReturnParams = z.object({
 type CreateReturnInput = z.infer<typeof createReturnParams>;
 
 /** Talep edilen ürünleri yeniden değerlendirir; tutarı kod hesaplar (model tutar göndermez). */
-async function planReturn(input: CreateReturnInput) {
+async function planReturn(input: CreateReturnInput, excludeReturnId?: ObjectId) {
   const l = await lookup(input.orderNumber, input.email);
   if (!l.ok) return { ok: false as const, result: { created: false, ...l.result } };
-  const verdicts = await evaluateReturn(l.order);
+  const verdicts = await evaluateReturn(l.order, { excludeReturnId });
   const wanted = [...new Set(input.skus.map((s) => s.trim().toLowerCase()))];
   const problems: string[] = [];
   const items: ReturnType<typeof toReturnItem>[] = [];
@@ -210,13 +222,14 @@ export const createReturnRequest = tool({
   parameters: createReturnParams,
   // needsApproval: SDK, aracı çalıştırmadan ÖNCE bunu sorar. true dönerse araç
   // çalışmaz; run bir "interruption" ile durur ve bir insanın onayını bekler.
-  needsApproval: async (_ctx, input) => {
-    const plan = await planReturn(input);
+  needsApproval: async (ctx, input) => {
+    const plan = await planReturn(input, (ctx?.context as ShopContext | undefined)?.approvingReturnId);
     return plan.ok && plan.amount > RETURN_APPROVAL_THRESHOLD;
   },
   execute: async (input, ctx, details) => {
-    const { conversationId, runId } = shopContext(ctx);
-    const plan = await planReturn(input); // modelin önceki sonucuna güvenme, yeniden kontrol et
+    const { conversationId, runId, approvingReturnId } = shopContext(ctx);
+    // Modelin önceki sonucuna güvenme, yeniden kontrol et (onay günler sonra da gelebilir).
+    const plan = await planReturn(input, approvingReturnId);
     if (!plan.ok) return plan.result;
 
     if (plan.amount > RETURN_APPROVAL_THRESHOLD) {
@@ -230,6 +243,29 @@ export const createReturnRequest = tool({
     }
 
     const now = new Date();
+    if (approvingReturnId) {
+      // Inbox onayı: bekleyen kaydı onayla (yeni kayıt açma, çift iade olmasın).
+      // Filtredeki `status` sayesinde aynı kayıt iki kez onaylanamaz.
+      const { modifiedCount } = await collections
+        .returns()
+        .updateOne(
+          { _id: approvingReturnId, status: "pending_approval" },
+          { $set: { status: "approved", decidedAt: now, approvedRunId: runId } },
+        );
+      if (modifiedCount !== 1) {
+        return { created: false, reason: "This return request was already decided. Tell the customer a team member will follow up." };
+      }
+      // returnId bilerek yok: model onu müşteriye "iade numarası" diye yazıyordu.
+      return {
+        created: true,
+        status: "approved",
+        approvedBy: "human team member",
+        refund: `${plan.amount} TRY`,
+        items: plan.items.map((i) => i.name),
+        nextStep: "Tell the customer a team member approved their return. They will get a return shipping code by email; the refund is issued after the item arrives.",
+      };
+    }
+
     const { insertedId } = await collections.returns().insertOne({
       conversationId,
       runId,

@@ -5,4 +5,6 @@ export default [
   index("routes/home.tsx"),
   route("chat", "routes/chat.new.tsx"), // yeni sohbet açar, /chat/:id'ye yönlendirir
   route("chat/:conversationId", "routes/chat.tsx"),
+  route("traces/:runId", "routes/trace.tsx"),
+  route("inbox", "routes/inbox.tsx"),
 ] satisfies RouteConfig;

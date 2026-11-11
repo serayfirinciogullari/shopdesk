@@ -31,7 +31,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   if (!convo) throw data("Conversation not found", { status: 404 });
   return {
     status: convo.status,
-    messages: convo.messages.map((m) => ({ role: m.role, text: m.text, at: m.at.toISOString() })),
+    messages: convo.messages.map((m) => ({ role: m.role, text: m.text, at: m.at.toISOString(), runId: m.runId ?? null })),
   };
 }
 
@@ -93,7 +93,10 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
           <Link to="/" className="text-lg font-semibold">ShopDesk</Link>
           <p className="text-sm text-gray-500">Customer support</p>
         </div>
-        <Link to="/chat" reloadDocument className="text-sm text-gray-600 underline">New chat</Link>
+        <div className="flex gap-4 text-sm text-gray-600">
+          <Link to="/inbox" className="underline">Inbox</Link>
+          <Link to="/chat" reloadDocument className="underline">New chat</Link>
+        </div>
       </header>
 
       <section className="flex-1 space-y-3 overflow-y-auto py-4" aria-live="polite">
@@ -103,7 +106,7 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
           </p>
         )}
         {loaderData.messages.map((m, i) => (
-          <Bubble key={i} role={m.role} text={m.text} />
+          <Bubble key={i} role={m.role} text={m.text} runId={m.runId} />
         ))}
         {pendingText && <Bubble role="customer" text={pendingText} />}
         {sending && loaderData.status !== "escalated" && <p className="text-sm text-gray-400">Typing…</p>}
@@ -138,7 +141,7 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
   );
 }
 
-function Bubble({ role, text }: { role: Message["role"]; text: string }) {
+function Bubble({ role, text, runId }: { role: Message["role"]; text: string; runId?: string | null }) {
   const mine = role === "customer";
   return (
     <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
@@ -149,6 +152,12 @@ function Bubble({ role, text }: { role: Message["role"]; text: string }) {
       >
         {role === "human" && <span className="mb-1 block text-xs text-gray-500">Support team</span>}
         <Linkified text={text} />
+        {runId && (
+          // Ajanın bu cevabı verirken ne yaptığı: hangi ajan, hangi araç, hangi kural.
+          <Link to={`/traces/${runId}`} className="mt-1 block text-xs text-gray-400 underline hover:text-gray-700">
+            View trace
+          </Link>
+        )}
       </div>
     </div>
   );
