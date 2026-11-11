@@ -6,15 +6,21 @@
  * Action bittikten sonra React Router loader'ı kendiliğinden yeniden çalıştırır,
  * yani ekran veritabanındaki son hâli gösterir.
  */
-import { useEffect, useRef } from "react";
-import { data, Link, useFetcher } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { data, Link, useFetcher, useRevalidator, useSearchParams } from "react-router";
 import { ObjectId } from "mongodb";
 import type { Route } from "./+types/chat";
 import { collections } from "~/lib/db.server";
 import { sendCustomerMessage } from "~/lib/chat.server";
+import { checkRateLimit } from "~/lib/ratelimit.server";
+import { findScenario } from "~/lib/demo-scenarios";
 import type { Message } from "~/lib/types";
 
 const MAX_LEN = 1000;
+/** Polling: bekleyen bir ticket varken kaç ms'de bir "yeni mesaj var mı?" diye sorulur. */
+const POLL_MS = 4000;
+/** Unutulmuş bir sekme sonsuza kadar sormasın. */
+const POLL_MAX_MS = 15 * 60_000;
 
 function parseId(raw: string | undefined) {
   if (!raw || !ObjectId.isValid(raw)) throw data("Conversation not found", { status: 404 });
@@ -29,8 +35,12 @@ export async function loader({ params }: Route.LoaderArgs) {
   const _id = parseId(params.conversationId);
   const convo = await collections.conversations().findOne({ _id });
   if (!convo) throw data("Conversation not found", { status: 404 });
+  // Açık bir ticket varsa (onay bekleyen iade ya da insana devir) cevap Inbox'tan gelecek:
+  // sayfa bu durumda kendini yeniler (polling).
+  const openTickets = await collections.tickets().countDocuments({ conversationId: _id, status: "open" });
   return {
     status: convo.status,
+    waitingForHuman: openTickets > 0,
     messages: convo.messages.map((m) => ({ role: m.role, text: m.text, at: m.at.toISOString(), runId: m.runId ?? null })),
   };
 }
@@ -42,6 +52,10 @@ export async function action({ request, params }: Route.ActionArgs) {
   if (!text) return data({ error: "Please type a message." }, { status: 400 });
   if (text.length > MAX_LEN) return data({ error: `Messages can be at most ${MAX_LEN} characters.` }, { status: 400 });
 
+  // Canlı demo koruması: model çağrılmadan önce IP ve günlük limit kontrolü.
+  const limit = await checkRateLimit(request);
+  if (!limit.ok) return data({ error: limit.message }, { status: 429 });
+
   // İş mantığı chat.server.ts'te; eval de aynı fonksiyonu kullanır.
   const result = await sendCustomerMessage(_id, text);
   if (result.status === "not_found") throw data("Conversation not found", { status: 404 });
@@ -50,8 +64,14 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 export default function Chat({ loaderData }: Route.ComponentProps) {
   const fetcher = useFetcher<typeof action>();
-  const formRef = useRef<HTMLFormElement>(null);
+  const revalidator = useRevalidator();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [searchParams] = useSearchParams();
+
+  // Ana sayfadaki "Try these" butonundan gelindiyse mesaj hazır doldurulur (gönderen ziyaretçi).
+  const scenario = loaderData.messages.length === 0 ? findScenario(searchParams.get("try")) : undefined;
+  const [draft, setDraft] = useState(scenario?.message ?? "");
+  const lastSent = useRef("");
 
   const sending = fetcher.state !== "idle";
   // İyimser gösterim: sunucu cevap verene kadar müşterinin mesajını hemen göster.
@@ -59,12 +79,33 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
   const error = fetcher.data && "error" in fetcher.data ? fetcher.data.error : null;
 
   useEffect(() => {
-    if (fetcher.state === "submitting") formRef.current?.reset();
-  }, [fetcher.state]);
+    if (fetcher.state === "submitting") {
+      lastSent.current = String(fetcher.formData?.get("text") ?? "");
+      setDraft("");
+    }
+    // Mesaj reddedildiyse (ör. rate limit) yazılanı kaybettirme.
+    if (fetcher.state === "idle" && error && lastSent.current) {
+      setDraft(lastSent.current);
+      lastSent.current = "";
+    }
+  }, [fetcher.state, error]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [loaderData.messages.length, sending]);
+
+  // Polling: Inbox'ta bir temsilci karar verene kadar birkaç saniyede bir loader'ı
+  // yeniden çalıştır (sayfa yenilenmeden yeni mesaj görünür). Sekme arka plandaysa sorma.
+  const waiting = loaderData.waitingForHuman && !sending;
+  useEffect(() => {
+    if (!waiting) return;
+    const started = Date.now();
+    const timer = setInterval(() => {
+      if (Date.now() - started > POLL_MAX_MS) return clearInterval(timer);
+      if (document.visibilityState === "visible" && revalidator.state === "idle") revalidator.revalidate();
+    }, POLL_MS);
+    return () => clearInterval(timer);
+  }, [waiting, revalidator]);
 
   return (
     <main className="mx-auto flex h-dvh max-w-2xl flex-col p-4">
@@ -95,12 +136,23 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
             You've been transferred to a support agent. A team member will reply here.
           </p>
         )}
+        {loaderData.waitingForHuman && loaderData.status !== "escalated" && (
+          <p className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800">
+            Waiting for a team member's approval. This page updates by itself.{" "}
+            <Link to="/inbox" target="_blank" className="underline">Open the Inbox</Link> to decide.
+          </p>
+        )}
         <div ref={bottomRef} />
       </section>
 
-      <fetcher.Form ref={formRef} method="post" className="flex gap-2 border-t border-gray-200 pt-3">
+      {scenario && draft === scenario.message && (
+        <p className="pb-2 text-xs text-gray-500">Demo message filled in. Press Send (you can edit it first).</p>
+      )}
+      <fetcher.Form method="post" className="flex gap-2 border-t border-gray-200 pt-3">
         <input
           name="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
           autoComplete="off"
           maxLength={MAX_LEN}
           placeholder="Type your message…"

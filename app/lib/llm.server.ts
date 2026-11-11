@@ -1,9 +1,9 @@
 /**
- * Model katmanı: Groq birincil, Gemini yedek.
+ * Model katmanı: sağlayıcı zinciri (varsayılan Groq birincil, Gemini yedek; MODEL_CHAIN).
  *
  * SDK'nın `Model` arayüzünü saran küçük bir sınıf. Ajan her düşündüğünde (her model
- * çağrısında) önce Groq denenir; kota (429) ya da sunucu hatası (5xx, bağlantı) olursa
- * aynı istek Gemini'ye gider (kısa bir "şu kadar sn sonra dene" 429'unda önce bekleyip
+ * çağrısında) önce zincirin ilk modeli denenir; kota (429) ya da sunucu hatası (5xx,
+ * bağlantı) olursa aynı istek sıradakine gider (kısa bir "şu kadar sn sonra dene" 429'unda önce bekleyip
  * Groq bir kez daha denenir). Müşteri bunu görmez (DEVIR_NOTU 15.1); hangi sağlayıcının
  * kullanıldığı ve neden geçildiği sadece trace'e yazılır.
  *
@@ -25,19 +25,48 @@ interface Provider {
   impl: OpenAIChatCompletionsModel;
 }
 
+const DEFAULT_BASE_URL: Record<Provider["name"], string> = {
+  groq: "https://api.groq.com/openai/v1",
+  gemini: "https://generativelanguage.googleapis.com/v1beta/openai/",
+};
+
+/**
+ * Sağlayıcı sırası `.env`'den okunur (DEVIR_NOTU 18 kararı):
+ *   MODEL_CHAIN=groq:openai/gpt-oss-120b,groq:openai/gpt-oss-20b,gemini:gemini-3.5-flash
+ * Groq'ta kota model başına ayrı, yani iki Groq modeli iki ayrı kota demek.
+ * MODEL_CHAIN yoksa eski davranış: MODEL (Groq) → GEMINI_MODEL (Gemini).
+ */
+export function parseModelChain(env: NodeJS.ProcessEnv = process.env): { name: Provider["name"]; model: string }[] {
+  const raw = env.MODEL_CHAIN?.trim();
+  if (!raw) {
+    const legacy: { name: Provider["name"]; model: string }[] = [];
+    if (env.MODEL) legacy.push({ name: "groq", model: env.MODEL });
+    if (env.GEMINI_MODEL) legacy.push({ name: "gemini", model: env.GEMINI_MODEL });
+    return legacy;
+  }
+  return raw.split(",").map((entry) => {
+    const i = entry.indexOf(":");
+    const name = entry.slice(0, i).trim();
+    const model = entry.slice(i + 1).trim();
+    if (i < 0 || (name !== "groq" && name !== "gemini") || !model) {
+      throw new Error(`MODEL_CHAIN entry "${entry}" must look like groq:<model> or gemini:<model>.`);
+    }
+    return { name, model };
+  });
+}
+
 function makeProviders(): Provider[] {
+  const keys = { groq: process.env.GROQ_API_KEY, gemini: process.env.GEMINI_API_KEY };
+  const baseURLs = { groq: process.env.GROQ_BASE_URL, gemini: process.env.GEMINI_BASE_URL };
   const list: Provider[] = [];
-  const { GROQ_API_KEY, GROQ_BASE_URL, MODEL, GEMINI_API_KEY, GEMINI_BASE_URL, GEMINI_MODEL } = process.env;
-  if (GROQ_API_KEY && MODEL) {
-    // maxRetries 1: kota dolmuşsa uzun uzun beklemek yerine hızlıca yedeğe geçelim.
-    const client = new OpenAI({ apiKey: GROQ_API_KEY, baseURL: GROQ_BASE_URL, maxRetries: 1, timeout: 30_000 });
-    list.push({ name: "groq", model: MODEL, impl: new OpenAIChatCompletionsModel(client, MODEL) });
+  for (const { name, model } of parseModelChain()) {
+    const apiKey = keys[name];
+    if (!apiKey) continue; // anahtarı olmayan sağlayıcı atlanır
+    // maxRetries 1: kota dolmuşsa uzun uzun beklemek yerine hızlıca sıradakine geçelim.
+    const client = new OpenAI({ apiKey, baseURL: baseURLs[name] || DEFAULT_BASE_URL[name], maxRetries: 1, timeout: 30_000 });
+    list.push({ name, model, impl: new OpenAIChatCompletionsModel(client, model) });
   }
-  if (GEMINI_API_KEY && GEMINI_MODEL) {
-    const client = new OpenAI({ apiKey: GEMINI_API_KEY, baseURL: GEMINI_BASE_URL, maxRetries: 1, timeout: 30_000 });
-    list.push({ name: "gemini", model: GEMINI_MODEL, impl: new OpenAIChatCompletionsModel(client, GEMINI_MODEL) });
-  }
-  if (list.length === 0) throw new Error("No model provider configured (.env: GROQ_API_KEY / GEMINI_API_KEY).");
+  if (list.length === 0) throw new Error("No model provider configured (.env: MODEL_CHAIN or MODEL/GEMINI_MODEL, plus API keys).");
   return list;
 }
 

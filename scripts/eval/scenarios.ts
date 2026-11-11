@@ -355,9 +355,9 @@ export const scenarios: Scenario[] = [
   },
   {
     id: 17,
-    title: "Yedek model: run ortasında Groq 429 → Gemini",
+    title: "Yedek model: run ortasında Groq 429 → sıradaki model",
     message: "Merhaba, #1042 numaralı siparişim nerede? E-postam ayse@example.com",
-    expected: "2. model çağrısında Groq 429 taklit edilir; trace'te gemini + fallbackReason \"groq 429\"; run hatasız biter, getOrderStatus found:true",
+    expected: "2. model çağrısında Groq 429 taklit edilir; trace'te zincirdeki sıradaki model + fallbackReason \"groq 429\"; run hatasız biter, getOrderStatus found:true",
     wrap: async (fn) => {
       // DEVIR_NOTU 18'deki yöntem: SDK'nın model sınıfını sarıp 2. çağrıda 429 fırlat.
       const proto = OpenAIChatCompletionsModel.prototype;
@@ -377,10 +377,11 @@ export const scenarios: Scenario[] = [
     },
     checks: async (r) => {
       const models = spans(r.traces).filter((s) => s.type === "model");
-      const fell = models.filter((s) => s.provider === "gemini" && /groq 429/.test(s.fallbackReason ?? ""));
+      // MODEL_CHAIN'e göre sıradaki model başka bir Groq modeli ya da Gemini olabilir.
+      const fell = models.filter((s) => !s.error && /groq 429/.test(s.fallbackReason ?? ""));
       return [
         runsOk(r),
-        check("trace'te groq 429 → gemini adımı", fell.length > 0, models.map((s) => `${s.provider}${s.error ? "(429)" : ""}`).join(" → ")),
+        check("trace'te groq 429 → sıradaki model adımı", fell.length > 0, models.map((s) => `${s.provider}/${s.model}${s.error ? "(429)" : ""}`).join(" → ")),
         check("getOrderStatus found:true", toolSpans(r.traces, "getOrderStatus").some((s) => out(s).found === true)),
       ];
     },

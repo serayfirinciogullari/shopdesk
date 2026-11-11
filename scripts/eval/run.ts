@@ -16,6 +16,10 @@ import { closeDb, collections, getDb } from "../../app/lib/db.server";
 import { createConversation, sendCustomerMessage } from "../../app/lib/chat.server";
 import type { Trace } from "../../app/lib/types";
 import { resetStore } from "../lib/store";
+import { parseModelChain } from "../../app/lib/llm.server";
+
+const chainLabel = () => parseModelChain().map((p) => `\`${p.name}:${p.model}\``).join(" → ") || "?";
+
 import { out, type Check } from "./checks";
 import { scenarios, type EvalContext, type Scenario, type ScenarioRun } from "./scenarios";
 
@@ -135,7 +139,7 @@ async function writeOutputs(results: Map<number, Result>, runningId?: number) {
   const md = [
     `# ShopDesk eval sonuçları`,
     ``,
-    `**${passed}/${scenarios.length} senaryo geçti.** Model: \`${process.env.MODEL ?? "?"}\` (Groq), yedek \`${process.env.GEMINI_MODEL ?? "?"}\`. Kontroller cevap metnine değil trace'e bakar (hangi araç çağrıldı, ne döndü, onay adımı var mı). LLM her seferinde aynı cevabı vermeyebilir; bu tablo tek bir turun sonucudur.`,
+    `**${passed}/${scenarios.length} senaryo geçti.** Model zinciri: ${chainLabel()}. Kontroller cevap metnine değil trace'e bakar (hangi araç çağrıldı, ne döndü, onay adımı var mı). LLM her seferinde aynı cevabı vermeyebilir; bu tablo tek bir turun sonucudur.`,
     ``,
     `| # | Senaryo | Beklenen sonuç | Çıkan sonuç | Sonuç |`,
     `|---|---|---|---|---|`,
@@ -217,7 +221,7 @@ try {
     process.exit(0);
   }
   const selected = selectScenarios();
-  console.log(`🧪 ShopDesk eval · veritabanı: ${db} · ${selected.length} senaryo · model: ${process.env.MODEL}`);
+  console.log(`🧪 ShopDesk eval · veritabanı: ${db} · ${selected.length} senaryo · model zinciri: ${chainLabel()}`);
   const { deleted } = await resetStore({ wipeHistory: true });
   console.log(`   Veritabanı sıfırlandı (silinen: ${deleted.conversations} sohbet, ${deleted.traces} trace, ${deleted.returns} iade, ${deleted.tickets} ticket).\n`);
 

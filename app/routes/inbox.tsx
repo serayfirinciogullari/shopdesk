@@ -9,6 +9,7 @@ import { data, Link, useFetcher } from "react-router";
 import type { Route } from "./+types/inbox";
 import { collections } from "~/lib/db.server";
 import { decideTicket, type Decision } from "~/lib/inbox.server";
+import { checkRateLimit } from "~/lib/ratelimit.server";
 import { Nav, TicketPill } from "~/components/ui";
 
 export function meta({}: Route.MetaArgs) {
@@ -57,6 +58,9 @@ export async function action({ request }: Route.ActionArgs) {
   const id = String(form.get("ticketId") ?? "");
   const decision = String(form.get("decision") ?? "") as Decision;
   if (decision !== "approve" && decision !== "reject") return data({ ok: false, message: "Unknown decision." }, { status: 400 });
+  // Onay, durdurulmuş run'ı sürdürür (bir model çağrısı); chat ile aynı limite sayılır.
+  const limit = await checkRateLimit(request);
+  if (!limit.ok) return data({ ok: false, message: limit.message }, { status: 429 });
   const result = await decideTicket(id, decision);
   return data(result, { status: result.ok ? 200 : 409 });
 }

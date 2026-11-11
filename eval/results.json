@@ -120,16 +120,16 @@
         "pass": true
       }
     ],
-    "tokens": 1577,
+    "tokens": 1602,
     "requests": 3,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "369cb414-1c47-46e8-98cf-b7bcc6098984"
+      "52f3ebdc-ac65-464f-9904-a354a071fe3a"
     ],
     "notes": [],
-    "at": "2026-11-11T18:24:53.261Z"
+    "at": "2026-11-11T19:08:43.646Z"
   },
   "5": {
     "id": 5,
@@ -151,16 +151,16 @@
         "pass": true
       }
     ],
-    "tokens": 3929,
+    "tokens": 4173,
     "requests": 4,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "6093b5b2-7b01-4c50-990c-6bd3b53566ba"
+      "cbb6da87-4295-4c31-a598-d8422c506c7b"
     ],
     "notes": [],
-    "at": "2026-11-11T18:25:51.460Z"
+    "at": "2026-11-11T19:08:56.954Z"
   },
   "6": {
     "id": 6,
@@ -469,7 +469,7 @@
       {
         "name": "cevaptaki tutar = trace'teki tutar",
         "pass": true,
-        "detail": "1199 TRY"
+        "detail": "1199 TRY"
       },
       {
         "name": "ticket: approved, resumed_run (run kaldığı yerden sürdü)",
@@ -492,19 +492,19 @@
         "detail": "1199 TRY"
       }
     ],
-    "tokens": 6128,
+    "tokens": 5780,
     "requests": 5,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "9f9357bc-aa04-4049-85c1-d1d4a2c6872f",
-      "927a3261-2356-4cbe-8e34-4546a10c64a6"
+      "ecb324eb-a59b-41e0-b08c-8db931d5c328",
+      "99d59c28-7312-4cf0-8f4d-f64bf7913493"
     ],
     "notes": [
       "Inbox: Refund of 1199 TRY approved. The agent resumed the run and told the customer."
     ],
-    "at": "2026-11-11T18:30:30.490Z"
+    "at": "2026-11-11T19:10:08.898Z"
   },
   "14": {
     "id": 14,
@@ -625,25 +625,25 @@
         "detail": "ok"
       },
       {
-        "name": "trace'te groq 429 → gemini adımı",
+        "name": "trace'te groq 429 → sıradaki model adımı",
         "pass": true,
-        "detail": "groq → groq(429) → gemini → groq"
+        "detail": "groq/openai/gpt-oss-20b → groq/openai/gpt-oss-20b(429) → gemini/gemini-3.5-flash → groq/openai/gpt-oss-20b"
       },
       {
         "name": "getOrderStatus found:true",
         "pass": true
       }
     ],
-    "tokens": 1637,
+    "tokens": 1836,
     "requests": 3,
     "providers": [
       "groq",
       "gemini"
     ],
     "runIds": [
-      "ff00a388-1247-4bd9-a7ec-88b528ca8025"
+      "6232a1ff-84e3-42b4-a4ca-3f8d002706b8"
     ],
     "notes": [],
-    "at": "2026-11-11T18:33:58.629Z"
+    "at": "2026-11-11T19:11:18.270Z"
   }
 }
