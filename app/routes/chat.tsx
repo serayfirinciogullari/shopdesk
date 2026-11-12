@@ -120,17 +120,22 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
   return (
     // Geniş ekranda iki sütun: solda sohbet, sağda "What the agent did" paneli.
     // Dar ekranda panel gizli; her ajan mesajındaki "Trace" linki aynı bilgiye götürür.
-    <main className="mx-auto grid h-dvh max-w-6xl grid-rows-[minmax(0,1fr)] gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+    // Yükseklik: ekran − üst menü (SiteNav, 4rem). Sohbet kendi içinde kayar, sayfa kaymaz.
+    <main className="mx-auto grid h-[calc(100dvh-4rem)] max-w-7xl grid-rows-[minmax(0,1fr)] gap-4 px-4 pt-2 pb-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px]">
      <div className="flex min-h-0 flex-col">
-      <header className="flex items-center justify-between border-b border-gray-200 pb-3">
-        <div>
-          <Link to="/" className="text-lg font-semibold">ShopDesk</Link>
-          <p className="text-sm text-gray-500">Customer support</p>
+      {/* Mağaza sohbet penceresinin başlığı (müşterinin gördüğü). Site menüsü üstte ayrı. */}
+      <header className="flex items-center gap-3 border-b border-gray-200 pb-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gray-900 text-xs font-semibold text-white">SD</span>
+        <div className="min-w-0">
+          <p className="text-sm font-medium">ShopDesk support</p>
+          <p className="flex items-center gap-1.5 text-xs text-gray-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            AI agent · usually replies in a few seconds
+          </p>
         </div>
-        <div className="flex gap-4 text-sm text-gray-600">
-          <Link to="/inbox" className="underline">Inbox</Link>
-          <Link to="/chat" reloadDocument className="underline">New chat</Link>
-        </div>
+        <Link to="/chat" reloadDocument className="ml-auto rounded-full border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
+          New chat
+        </Link>
       </header>
 
       <section className="flex-1 space-y-3 overflow-y-auto py-4" aria-live="polite">

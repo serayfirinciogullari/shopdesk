@@ -14,7 +14,7 @@ import type { Route } from "./+types/trace";
 import { collections } from "~/lib/db.server";
 import type { Span } from "~/lib/types";
 import { AgentText } from "~/components/AgentText";
-import { Nav, TicketPill } from "~/components/ui";
+import { TicketPill } from "~/components/ui";
 import { describeOutcome, fmtMs, RULE_SOURCE, runVerdict, type RunVerdict } from "~/lib/trace-view";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -119,7 +119,6 @@ export default function TracePage({ loaderData: t }: Route.ComponentProps) {
 
   return (
     <main className="mx-auto max-w-6xl p-4 pb-16">
-      <Nav />
 
       <header className="mt-4 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">

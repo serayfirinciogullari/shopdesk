@@ -56,17 +56,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const d = (ms: number) => ({ "--d": `${ms}ms` }) as React.CSSProperties;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pt-6 pb-16 sm:px-6">
-      <nav className="anim-rise flex items-center justify-between text-sm">
-        <span className="font-semibold">ShopDesk</span>
-        <div className="flex gap-4 text-gray-600">
-          <Link to="/inbox" className="hover:text-gray-900">Inbox</Link>
-          <Link to="/tests" className="hover:text-gray-900">Tests</Link>
-          <Link to="/chat" className="hover:text-gray-900">New chat</Link>
-        </div>
-      </nav>
+    <main className="mx-auto max-w-6xl px-4 pt-2 pb-16 sm:px-6">
 
-      <section className="mt-10 grid items-center gap-10 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <section className="mt-8 grid items-center gap-10 lg:mt-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div>
           <p className="anim-rise flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] text-gray-500 uppercase" style={d(60)}>
             <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />

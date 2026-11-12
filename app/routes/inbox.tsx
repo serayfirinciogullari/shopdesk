@@ -17,7 +17,7 @@ import { collections } from "~/lib/db.server";
 import { decideTicket, type Decision } from "~/lib/inbox.server";
 import { checkRateLimit } from "~/lib/ratelimit.server";
 import { ruleChecks } from "~/lib/trace-view";
-import { Nav, TicketPill } from "~/components/ui";
+import { TicketPill } from "~/components/ui";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Inbox · ShopDesk" }];
@@ -138,7 +138,6 @@ export default function Inbox({ loaderData }: Route.ComponentProps) {
 
   return (
     <main className="mx-auto max-w-7xl p-4 pb-16">
-      <Nav />
       <div className="mt-4 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold">Inbox</h1>

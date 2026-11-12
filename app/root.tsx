@@ -9,6 +9,20 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { collections } from "~/lib/db.server";
+import { SiteNav } from "~/components/SiteNav";
+
+/**
+ * Üst menüdeki Inbox rozeti için açık ticket sayısı. Her sayfada çalışır (ucuz bir sayım);
+ * veritabanına ulaşılamazsa menü rozetsiz görünür, sayfa çökmez.
+ */
+export async function loader() {
+  try {
+    return { openTickets: await collections.tickets().countDocuments({ status: "open" }) };
+  } catch {
+    return { openTickets: null };
+  }
+}
 
 // Layout: her sayfanın ortak HTML iskeleti (Express'teki ortak şablon gibi).
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -29,8 +43,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
-  return <Outlet />;
+export default function App({ loaderData }: Route.ComponentProps) {
+  return (
+    <>
+      <SiteNav openTickets={loaderData.openTickets} />
+      <Outlet />
+    </>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -50,7 +69,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-6 pt-16">
+    <>
+     <SiteNav openTickets={null} />
+     <main className="mx-auto max-w-2xl p-6 pt-16">
       <h1 className="text-2xl font-semibold">{message}</h1>
       <p className="mt-2 text-gray-600">{details}</p>
       {stack && (
@@ -58,6 +79,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
           <code>{stack}</code>
         </pre>
       )}
-    </main>
+     </main>
+    </>
   );
 }

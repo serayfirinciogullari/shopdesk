@@ -10,7 +10,6 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Route } from "./+types/tests";
-import { Nav } from "~/components/ui";
 import { CountUp } from "~/components/CountUp";
 import { EVAL_LABELS, GROUP_LABEL, type EvalGroup } from "~/lib/eval-labels";
 import results from "../../eval/results.json";
@@ -86,7 +85,6 @@ export default function Tests({ loaderData }: Route.ComponentProps) {
 
   return (
     <main className="mx-auto max-w-6xl p-4 pb-16">
-      <Nav />
 
       <header className="mt-4 flex flex-wrap items-center gap-5 rounded-2xl border border-gray-200 bg-white p-4">
         <Ring passed={passed} total={total} />
