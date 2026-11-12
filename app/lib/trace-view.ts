@@ -137,6 +137,32 @@ export function runVerdict(t: Pick<Trace, "status" | "error" | "spans">): RunVer
   return { tone: "neutral", title: `${tools.length} tool call${tools.length > 1 ? "s" : ""}, no rule decision.` };
 }
 
+export interface RuleChecks {
+  /** checkReturnEligibility'nin ürün bazında kararları (en son çağrı). */
+  items: { name: string; eligible: boolean; reason: string }[];
+  /** Run onaya düştüyse: tutar ve eşik (needsApproval'ın kaydı). */
+  approval: { amount: number; threshold: number } | null;
+  escalated: boolean;
+  /** Kuralın hangi araçtan okunduğu, ekranda kaynak olarak yazılır. */
+  source: string | null;
+}
+
+/**
+ * Inbox'taki "Checked by code" listesi: temsilci kararı neye göre verecek?
+ * Modelin özetinden değil, trace'teki araç çıktılarından okunur.
+ */
+export function ruleChecks(spans: Span[]): RuleChecks {
+  const out = (s: Span) => (s.output ?? {}) as Record<string, any>;
+  const elig = [...spans].reverse().find((s) => s.type === "tool" && s.name === "checkReturnEligibility" && Array.isArray(out(s).items));
+  const appr = spans.find((s) => s.type === "approval" && typeof out(s).amount === "number");
+  return {
+    items: elig ? out(elig).items.map((i: any) => ({ name: String(i.name), eligible: !!i.eligible, reason: String(i.reason ?? "") })) : [],
+    approval: appr ? { amount: out(appr).amount, threshold: out(appr).threshold } : null,
+    escalated: spans.some((s) => s.type === "tool" && s.name === "escalateToHuman"),
+    source: elig ? "checkReturnEligibility → evaluateReturn()" : null,
+  };
+}
+
 /** Hangi araç hangi kuralı kodda uyguluyor (trace detayındaki "Rule enforced in code" kutusu). */
 export const RULE_SOURCE: Record<string, { where: string; rule: string }> = {
   getOrderStatus: { where: "tools.server.ts › lookup()", rule: "Order number and email must both match; a wrong number and a wrong email get the same answer." },
