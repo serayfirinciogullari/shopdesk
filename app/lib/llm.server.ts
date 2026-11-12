@@ -79,9 +79,22 @@ function fallbackReason(provider: string, e: unknown): string | null {
   if (e instanceof OpenAI.APIError) {
     const status = e.status ?? 0;
     if (status === 429 || status >= 500) return `${provider} ${status}`;
+    if (isBadModelOutput(e)) return `${provider} bad tool call`;
     return null; // 400/401 gibi hatalar bizim hatamız; yedeğe geçmek sorunu gizler
   }
   return null;
+}
+
+/**
+ * İstisna: Groq, modelin kendisi bozuk bir araç çağrısı ürettiğinde de 400 döner
+ * ("Failed to parse tool call arguments as JSON", kod `tool_use_failed`). Bu bizim isteğimizin
+ * hatası değil, modelin o seferki çıktısı: aynı istek tekrar denenince genelde düzelir.
+ * (Eval Tur 3, #13: bir run bu yüzden hatayla bitmişti.)
+ */
+function isBadModelOutput(e: unknown): boolean {
+  if (!(e instanceof OpenAI.APIError) || e.status !== 400) return false;
+  const code = (e.error as { code?: string } | undefined)?.code ?? e.code;
+  return code === "tool_use_failed" || /failed to parse tool call|failed_generation/i.test(e.message);
 }
 
 /**
@@ -183,7 +196,8 @@ export class FallbackModel implements Model {
           return res;
         } catch (e) {
           lastError = e;
-          const wait = attempt === 0 ? shortRetryDelayMs(e) : null;
+          // İlk hatada aynı sağlayıcıyı bir kez daha dene: kısa 429'da bekleyerek, bozuk araç çağrısında hemen.
+          const wait = attempt === 0 ? (shortRetryDelayMs(e) ?? (isBadModelOutput(e) ? 0 : null)) : null;
           this.recorder.add({
             type: "model",
             name: this.agentName,
@@ -194,7 +208,7 @@ export class FallbackModel implements Model {
             durationMs: Math.round(performance.now() - t0),
           });
           if (wait !== null) {
-            await sleep(wait);
+            if (wait > 0) await sleep(wait);
             continue; // aynı sağlayıcıyı bir kez daha dene
           }
           const why = fallbackReason(p.name, e);
