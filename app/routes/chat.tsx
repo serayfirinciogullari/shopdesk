@@ -121,7 +121,7 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
     // Geniş ekranda iki sütun: solda sohbet, sağda "What the agent did" paneli.
     // Dar ekranda panel gizli; her ajan mesajındaki "Trace" linki aynı bilgiye götürür.
     // Yükseklik: ekran − üst menü (SiteNav, 4rem). Sohbet kendi içinde kayar, sayfa kaymaz.
-    <main className="mx-auto grid h-[calc(100dvh-4rem)] max-w-7xl grid-rows-[minmax(0,1fr)] gap-4 px-4 pt-2 pb-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <main className="page grid h-[calc(100dvh-4rem)] grid-rows-[minmax(0,1fr)] gap-4 pt-2 pb-4 lg:grid-cols-[minmax(0,1fr)_340px]">
      <div className="flex min-h-0 flex-col">
       {/* Mağaza sohbet penceresinin başlığı (müşterinin gördüğü). Site menüsü üstte ayrı. */}
       <header className="flex items-center gap-3 border-b border-gray-200 pb-3">

@@ -53,7 +53,7 @@ export function SiteNav({ openTickets }: { openTickets: number | null }) {
       }`}
       style={{ height: NAV_HEIGHT }}
     >
-      <div className="mx-auto flex h-full max-w-7xl items-center gap-3 px-4 sm:px-6">
+      <div className="page flex h-full items-center gap-3">
         <Link to="/" className="group flex shrink-0 items-center gap-2.5" aria-label="ShopDesk home">
           <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-gray-900 text-white shadow-sm transition-transform duration-300 group-hover:-rotate-6">
             <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current stroke-[2.2] [stroke-linecap:round] [stroke-linejoin:round]">

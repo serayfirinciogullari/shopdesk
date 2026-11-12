@@ -10,6 +10,20 @@ body {
 }
 
 /*
+ * Ortak sayfa kapsayıcısı: üst menü (SiteNav) ve bütün sayfalar aynı genişlik ve kenar
+ * boşluğunu kullanır; logo, sayfa başlığı ve içerik aynı çizgide başlar.
+ */
+@utility page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-inline: 1rem;
+  @variant sm {
+    padding-inline: 1.5rem;
+  }
+}
+
+/*
  * Hareket dili (MotionSites craft kuralları): yalnızca durum değişince, kısa ve tek seferlik.
  * `both`: öğe sadece kendi gecikmesi boyunca gizli; animasyon hiç çalışmazsa son hâli görünür.
  * Gecikme her öğede `--d` ile verilir (ör. adım sırası × 380 ms).

@@ -118,7 +118,7 @@ export default function TracePage({ loaderData: t }: Route.ComponentProps) {
   const barDelay = (offsetMs: number) => Math.min(1200, Math.round(offsetMs * 0.4));
 
   return (
-    <main className="mx-auto max-w-6xl p-4 pb-16">
+    <main className="page pt-4 pb-16">
 
       <header className="mt-4 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">

@@ -56,7 +56,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const d = (ms: number) => ({ "--d": `${ms}ms` }) as React.CSSProperties;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pt-2 pb-16 sm:px-6">
+    <main className="page pt-2 pb-16">
 
       <section className="mt-8 grid items-center gap-10 lg:mt-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div>

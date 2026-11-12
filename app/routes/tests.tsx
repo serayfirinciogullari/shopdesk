@@ -84,7 +84,7 @@ export default function Tests({ loaderData }: Route.ComponentProps) {
   const visible = rows.filter((r) => group === "all" || r.label.group === group);
 
   return (
-    <main className="mx-auto max-w-6xl p-4 pb-16">
+    <main className="page pt-4 pb-16">
 
       <header className="mt-4 flex flex-wrap items-center gap-5 rounded-2xl border border-gray-200 bg-white p-4">
         <Ring passed={passed} total={total} />

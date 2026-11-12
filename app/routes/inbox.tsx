@@ -137,7 +137,7 @@ export default function Inbox({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <main className="mx-auto max-w-7xl p-4 pb-16">
+    <main className="page pt-4 pb-16">
       <div className="mt-4 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold">Inbox</h1>
