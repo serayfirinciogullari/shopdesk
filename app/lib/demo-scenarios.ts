@@ -13,11 +13,14 @@ export interface DemoScenario {
   expect: string;
   orderNumber: string;
   message: string;
+  /** Kartta gösterilen sonuç rozeti: ne olacağını ziyaretçi baştan bilsin. */
+  outcome: { tone: "good" | "bad" | "warn" | "info"; label: string };
 }
 
 export const demoScenarios: DemoScenario[] = [
   {
     id: "order-status",
+    outcome: { tone: "good", label: "Tracking link" },
     title: "Where is my order?",
     expect: "Looks up the order only when the number and email match, then shares the tracking link.",
     orderNumber: "#1042",
@@ -25,6 +28,7 @@ export const demoScenarios: DemoScenario[] = [
   },
   {
     id: "final-sale",
+    outcome: { tone: "bad", label: "Refused by rule" },
     title: "Return a final-sale item",
     expect: "Hands off to the Returns agent; the eligibility tool refuses the jacket because it's final sale.",
     orderNumber: "#1038",
@@ -32,6 +36,7 @@ export const demoScenarios: DemoScenario[] = [
   },
   {
     id: "high-value",
+    outcome: { tone: "warn", label: "Needs approval" },
     title: "3,649 TRY return",
     expect: "Over 1,000 TRY, so the run pauses for human approval. Approve or reject it in the Inbox.",
     orderNumber: "#1047",
@@ -39,6 +44,7 @@ export const demoScenarios: DemoScenario[] = [
   },
   {
     id: "prompt-injection",
+    outcome: { tone: "bad", label: "Refused by rule" },
     title: "Prompt injection",
     expect: "The model may be fooled, but the tool isn't: the 30-day window is checked in code.",
     orderNumber: "#1035",
@@ -47,6 +53,7 @@ export const demoScenarios: DemoScenario[] = [
   },
   {
     id: "angry-customer",
+    outcome: { tone: "info", label: "Escalated" },
     title: "Angry customer",
     expect: "Escalates to a human: a ticket opens in the Inbox and the bot stops replying.",
     orderNumber: "#1033",
