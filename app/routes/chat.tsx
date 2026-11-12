@@ -17,6 +17,7 @@ import { findScenario } from "~/lib/demo-scenarios";
 import type { Message } from "~/lib/types";
 import { summarizeRun } from "~/lib/trace-view";
 import { StepRail } from "~/components/StepRail";
+import { AgentText } from "~/components/AgentText";
 
 const MAX_LEN = 1000;
 /** Polling: bekleyen bir ticket varken kaç ms'de bir "yeni mesaj var mı?" diye sorulur. */
@@ -203,7 +204,7 @@ function Bubble({ role, text, runId }: { role: Message["role"]; text: string; ru
         }`}
       >
         {role === "human" && <span className="mb-1 block text-xs text-gray-500">Support team</span>}
-        <Linkified text={text} />
+        <AgentText text={text} />
       </div>
       {runId && (
         // lookfor Inbox'taki gibi: her AI mesajında bir rozet, tıklayınca o cevabın trace'i.
@@ -215,26 +216,5 @@ function Bubble({ role, text, runId }: { role: Message["role"]; text: string; ru
         </div>
       )}
     </div>
-  );
-}
-
-/** Ajan cevabındaki takip linklerini tıklanabilir yapar. */
-function Linkified({ text }: { text: string }) {
-  // Sondaki noktalama URL'ye dahil edilmez: "…/TR1042SD." → link "…/TR1042SD"
-  // Model bazen linki <…> içine alıyor; açılı parantezler de URL'ye dahil edilmez.
-  const parts = text.split(/(https?:\/\/[^\s)<>]*[^\s).,!?;:<>])/g);
-  return (
-    <>
-      {parts.map((p, i) =>
-        /^https?:\/\//.test(p) ? (
-          <a key={i} href={p} target="_blank" rel="noreferrer" className="underline">
-            {p}
-          </a>
-        ) : (
-          // Model bazen Markdown kalın yazıyor ("**3649 TRY**"): yıldızları göstermek yerine kalın yaz.
-          p.split(/\*\*([^*\n]+)\*\*/g).map((q, j) => (j % 2 === 1 ? <strong key={`${i}-${j}`}>{q}</strong> : q))
-        ),
-      )}
-    </>
   );
 }

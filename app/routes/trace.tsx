@@ -13,6 +13,7 @@ import { data, Link, useSearchParams } from "react-router";
 import type { Route } from "./+types/trace";
 import { collections } from "~/lib/db.server";
 import type { Span } from "~/lib/types";
+import { AgentText } from "~/components/AgentText";
 import { Nav, TicketPill } from "~/components/ui";
 import { describeOutcome, fmtMs, RULE_SOURCE, runVerdict, type RunVerdict } from "~/lib/trace-view";
 
@@ -261,7 +262,7 @@ function Detail({ row, t }: { row: Row; t: LoaderData }) {
         {t.status === "error" ? (
           <p className="text-sm text-red-700">{t.error}</p>
         ) : (
-          <p className="whitespace-pre-wrap rounded-lg bg-gray-50 p-3 text-sm">{t.finalOutput}</p>
+          <p className="whitespace-pre-wrap rounded-lg bg-gray-50 p-3 text-sm"><AgentText text={t.finalOutput ?? ""} /></p>
         )}
         <p className="text-xs text-gray-500">This is what the customer saw. The checks above it come from the tools, not from this text.</p>
       </DetailShell>

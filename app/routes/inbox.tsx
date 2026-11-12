@@ -10,6 +10,7 @@
  */
 import { useEffect, useState } from "react";
 import { data, Link, useFetcher, useSearchParams } from "react-router";
+import { AgentText } from "~/components/AgentText";
 import { ObjectId } from "mongodb";
 import type { Route } from "./+types/inbox";
 import { collections } from "~/lib/db.server";
@@ -238,7 +239,7 @@ function Message({ m, delayMs }: { m: Selected["messages"][number]; delayMs: num
     <div className={`anim-rise flex flex-col gap-1 ${mine ? "items-end" : "items-start"}`} style={{ "--d": `${delayMs}ms` } as React.CSSProperties}>
       <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ${mine ? "rounded-br-md bg-gray-900 text-white" : "rounded-bl-md border border-gray-200 bg-white"}`}>
         {m.role === "human" && <span className="mb-1 block text-xs text-gray-500">Support team</span>}
-        {m.text}
+        <AgentText text={m.text} />
       </div>
       {m.runId && (
         <div className="flex items-center gap-2 text-xs">
