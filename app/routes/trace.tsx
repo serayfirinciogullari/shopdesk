@@ -1,16 +1,20 @@
 /**
- * /traces/:runId: bir run'ın zaman çizelgesi ("ajan ne yaptı, neden?").
+ * /traces/:runId: bir run'ın incelemesi ("ajan ne yaptı, neden?").
  *
  * Bir run = bir müşteri mesajı. `traces` collection'ında run başına tek document var
  * ve adımları (`spans`) içinde dizi olarak duruyor; PostgreSQL'de bunu bir `traces`
  * tablosu + bir `spans` tablosu ve JOIN ile yapardık, burada tek okuma yetiyor.
+ *
+ * Düzen lookfor'un trace inspector'ı gibi: en üstte karar (ne oldu?), solda adım listesi
+ * ve süre çubukları, sağda seçilen adımın ayrıntısı. Seçili adım URL'de (`?step=6`),
+ * yani link paylaşılınca aynı adım açılır.
  */
-import { data, Link } from "react-router";
+import { data, Link, useSearchParams } from "react-router";
 import type { Route } from "./+types/trace";
 import { collections } from "~/lib/db.server";
 import type { Span } from "~/lib/types";
 import { Nav, TicketPill } from "~/components/ui";
-import { describeOutcome, fmtMs } from "~/lib/trace-view";
+import { describeOutcome, fmtMs, RULE_SOURCE, runVerdict, type RunVerdict } from "~/lib/trace-view";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Trace ${params.runId.slice(0, 8)} · ShopDesk` }];
@@ -40,6 +44,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     startedAt: t.startedAt.toISOString(),
     durationMs: t.durationMs,
     usage: t.usage,
+    verdict: runVerdict(t),
     tickets: tickets.map((k) => ({
       id: k._id.toHexString(),
       kind: k.kind,
@@ -55,66 +60,123 @@ export async function loader({ params }: Route.LoaderArgs) {
   };
 }
 
-type UISpan = Route.ComponentProps["loaderData"]["spans"][number];
+type LoaderData = Route.ComponentProps["loaderData"];
+type UISpan = LoaderData["spans"][number];
+
+/** Listede gösterilen satır: trace'in span'ları + baştaki müşteri mesajı ve sondaki cevap. */
+type Row =
+  | { kind: "input"; label: string; offsetMs: number; durationMs: number; level: 0 }
+  | { kind: "span"; span: UISpan; label: string; offsetMs: number; durationMs: number; level: 0 | 1 }
+  | { kind: "output"; label: string; offsetMs: number; durationMs: number; level: 0 };
+
+const TYPE_STYLE: Record<Span["type"], { label: string; chip: string; bar: string }> = {
+  agent: { label: "Agent", chip: "bg-violet-50 text-violet-700", bar: "bg-violet-500" },
+  handoff: { label: "Handoff", chip: "bg-violet-50 text-violet-700", bar: "bg-violet-300" },
+  model: { label: "Model", chip: "bg-gray-100 text-gray-600", bar: "bg-gray-300" },
+  tool: { label: "Function", chip: "bg-emerald-50 text-emerald-700", bar: "bg-emerald-500" },
+  approval: { label: "Approval", chip: "bg-amber-50 text-amber-800", bar: "bg-amber-500" },
+  guardrail: { label: "Guardrail", chip: "bg-rose-50 text-rose-700", bar: "bg-rose-500" },
+};
+
+const TONE = {
+  good: "bg-emerald-50 text-emerald-800",
+  bad: "bg-red-50 text-red-800",
+  warn: "bg-amber-50 text-amber-900",
+};
+
+function buildRows(t: LoaderData): Row[] {
+  const rows: Row[] = [{ kind: "input", label: t.resumedFrom ? "Inbox decision" : "Customer message", offsetMs: 0, durationMs: 0, level: 0 }];
+  for (const s of t.spans) {
+    // Model, araç ve onay adımları bir ajanın içinde olur: bir kademe içeride.
+    const level = s.type === "agent" || s.type === "handoff" ? 0 : 1;
+    rows.push({ kind: "span", span: s, label: s.type === "model" ? "Generation" : s.name, offsetMs: s.offsetMs, durationMs: s.durationMs, level });
+  }
+  rows.push({ kind: "output", label: t.status === "error" ? "Error" : `Reply${t.lastAgent ? ` · ${t.lastAgent}` : ""}`, offsetMs: t.durationMs, durationMs: 0, level: 0 });
+  return rows;
+}
+
+/** Açılışta seçili adım: kuralın karar verdiği araç (ret varsa o), yoksa ilk araç, yoksa cevap. */
+function defaultStep(rows: Row[]) {
+  const spanRows = rows.map((r, i) => [r, i] as const).filter(([r]) => r.kind === "span" && (r.span.type === "tool" || r.span.type === "approval"));
+  const refused = spanRows.find(([r]) => r.kind === "span" && describeOutcome(r.span).some((o) => o.tone !== "good"));
+  return (refused ?? spanRows[0])?.[1] ?? rows.length - 1;
+}
 
 export default function TracePage({ loaderData: t }: Route.ComponentProps) {
-  const models = t.spans.filter((s) => s.type === "model");
-  const fellBack = models.some((s) => s.fallbackReason);
+  const rows = buildRows(t);
+  const [params, setParams] = useSearchParams();
+  const raw = Number(params.get("step"));
+  const selected = Number.isInteger(raw) && raw >= 0 && raw < rows.length && params.has("step") ? raw : defaultStep(rows);
+  const select = (i: number) =>
+    setParams((p) => { p.set("step", String(i)); return p; }, { replace: true, preventScrollReset: true });
+
+  const total = Math.max(t.durationMs, 1);
+  const fellBack = t.spans.some((s) => s.type === "model" && s.fallbackReason);
+  const toolCalls = t.spans.filter((s) => s.type === "tool").length;
+  // Çubuklar run'daki gerçek başlangıç sırasıyla çizilir (gerçek sürenin ~0,4'ü, en fazla 1,2 sn).
+  const barDelay = (offsetMs: number) => Math.min(1200, Math.round(offsetMs * 0.4));
 
   return (
-    <main className="mx-auto max-w-3xl p-4 pb-16">
+    <main className="mx-auto max-w-6xl p-4 pb-16">
       <Nav />
 
-      <header className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-lg font-semibold">Run</h1>
-          <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{t.runId}</code>
-          <StatusPill status={t.status} interrupted={t.interrupted} />
+      <header className="mt-4 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
+          <Link to={`/chat/${t.conversationId}`} className="hover:text-gray-800 hover:underline">Conversation</Link>
+          <span>›</span>
+          <code className="text-gray-700">{t.runId}</code>
         </div>
-        <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-lg font-semibold">{t.resumedFrom ? "Run resumed after approval" : "Run"}</h1>
+          <StatusPill status={t.status} interrupted={t.interrupted} />
+          {t.lastAgent && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">ended in {t.lastAgent}</span>}
+        </div>
+
+        <Verdict v={t.verdict} delayMs={barDelay(t.durationMs) + 300} />
+
+        <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm tabular-nums">
           <Stat label="Duration" value={fmtMs(t.durationMs)} />
           <Stat label="Model calls" value={String(t.usage.requests)} />
           <Stat label="Tokens" value={t.usage.totalTokens.toLocaleString("en-US")} hint={`${t.usage.inputTokens} in · ${t.usage.outputTokens} out`} />
+          <Stat label="Tool calls" value={String(toolCalls)} />
           <Stat label="Started" value={new Date(t.startedAt).toLocaleTimeString("en-GB")} hint={new Date(t.startedAt).toLocaleDateString("en-GB")} />
         </dl>
         {fellBack && (
-          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            Some model calls fell back from the primary provider (see the model steps). The customer never saw this.
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Some model calls fell back from the primary provider (marked in the list). The customer never saw this.
           </p>
         )}
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          <Link to={`/chat/${t.conversationId}`} className="text-gray-600 underline">Open conversation</Link>
-          {t.resumedFrom && (
-            <Link to={`/traces/${t.resumedFrom}`} className="text-gray-600 underline">← Paused run this one resumed</Link>
-          )}
-          {t.continuedIn && (
-            <Link to={`/traces/${t.continuedIn}`} className="text-gray-600 underline">Resumed after approval →</Link>
-          )}
-        </div>
+        {(t.resumedFrom || t.continuedIn) && (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            {t.resumedFrom && <Link to={`/traces/${t.resumedFrom}`} className="text-gray-600 underline">← Paused run this one resumed</Link>}
+            {t.continuedIn && <Link to={`/traces/${t.continuedIn}`} className="text-gray-600 underline">Resumed after approval →</Link>}
+          </div>
+        )}
       </header>
 
-      <ol className="relative mt-6 space-y-3 border-l-2 border-gray-200 pl-5">
-        <Step dot="bg-gray-900" title={t.resumedFrom ? "Inbox decision" : "Customer"} meta="0 ms">
-          <p className="whitespace-pre-wrap text-sm">{t.input}</p>
-        </Step>
+      <div className="mt-4 grid overflow-hidden rounded-2xl border border-gray-200 bg-white lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        <section aria-label="Steps" className="min-w-0 border-b border-gray-200 py-2 lg:border-r lg:border-b-0">
+          <div className="grid grid-cols-[minmax(0,1fr)_140px] gap-3 px-4 pb-2 text-xs text-gray-500">
+            <span>Step</span>
+            <span>Timeline · 0 → {fmtMs(t.durationMs)}</span>
+          </div>
+          <ol>
+            {rows.map((r, i) => (
+              <li key={i}>
+                <StepRow row={r} selected={i === selected} total={total} delayMs={barDelay(r.offsetMs)} onSelect={() => select(i)} />
+              </li>
+            ))}
+          </ol>
+        </section>
 
-        {t.spans.map((s, i) => (
-          <SpanStep key={i} s={s} />
-        ))}
-
-        {t.status === "error" ? (
-          <Step dot="bg-red-600" title="Error" meta={fmtMs(t.durationMs)}>
-            <p className="text-sm text-red-700">{t.error}</p>
-          </Step>
-        ) : (
-          <Step dot="bg-gray-900" title={`Reply${t.lastAgent ? ` · ${t.lastAgent}` : ""}`} meta={fmtMs(t.durationMs)}>
-            <p className="whitespace-pre-wrap text-sm">{t.finalOutput}</p>
-          </Step>
-        )}
-      </ol>
+        {/* key: adım değişince panel kısa bir girişle yenilenir. */}
+        <section key={selected} aria-live="polite" className="anim-rise min-w-0 p-4" style={{ "--d": "0ms" } as React.CSSProperties}>
+          <Detail row={rows[selected]} t={t} />
+        </section>
+      </div>
 
       {t.tickets.length > 0 && (
-        <section className="mt-6 rounded-xl border border-gray-200 bg-white p-4 text-sm">
+        <section className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 text-sm">
           <h2 className="font-semibold">Tickets opened by this run</h2>
           <ul className="mt-2 space-y-1">
             {t.tickets.map((k) => (
@@ -135,90 +197,148 @@ export default function TracePage({ loaderData: t }: Route.ComponentProps) {
   );
 }
 
-// ─── Adımlar ───────────────────────────────────────────────────────────────
+// ─── Parçalar ──────────────────────────────────────────────────────────────
 
-const TYPE_STYLE: Record<Span["type"], { dot: string; label: string; chip: string }> = {
-  agent: { dot: "bg-indigo-600", label: "Agent", chip: "bg-indigo-50 text-indigo-700" },
-  handoff: { dot: "bg-violet-500", label: "Handoff", chip: "bg-violet-50 text-violet-700" },
-  model: { dot: "bg-gray-400", label: "Model", chip: "bg-gray-100 text-gray-600" },
-  tool: { dot: "bg-emerald-600", label: "Tool", chip: "bg-emerald-50 text-emerald-700" },
-  approval: { dot: "bg-amber-500", label: "Approval", chip: "bg-amber-50 text-amber-800" },
-  guardrail: { dot: "bg-rose-500", label: "Guardrail", chip: "bg-rose-50 text-rose-700" },
-};
-
-function SpanStep({ s }: { s: UISpan }) {
-  const style = TYPE_STYLE[s.type];
-  const meta = `+${fmtMs(s.offsetMs)}${s.durationMs ? ` · ${fmtMs(s.durationMs)}` : ""}`;
-  const title = (
-    <span className="flex flex-wrap items-center gap-2">
-      <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${style.chip}`}>{style.label}</span>
-      <span className={s.type === "model" ? "text-gray-600" : "font-medium"}>{s.name}</span>
-    </span>
+function Verdict({ v, delayMs }: { v: RunVerdict; delayMs: number }) {
+  const cls = {
+    good: "border-emerald-600 bg-emerald-50 text-emerald-900",
+    bad: "border-red-600 bg-red-50 text-red-900",
+    warn: "border-amber-500 bg-amber-50 text-amber-900",
+    neutral: "border-gray-300 bg-gray-50 text-gray-800",
+  }[v.tone];
+  return (
+    <div className={`anim-rise rounded-xl border-[1.5px] px-3 py-2.5 text-sm ${cls}`} style={{ "--d": `${delayMs}ms` } as React.CSSProperties}>
+      <p className="font-medium">{v.title}</p>
+      {v.detail && <p className="mt-0.5 opacity-80">{v.detail}</p>}
+    </div>
   );
+}
 
-  if (s.type === "model") {
+function StepRow({ row, selected, total, delayMs, onSelect }: { row: Row; selected: boolean; total: number; delayMs: number; onSelect: () => void }) {
+  const style = row.kind === "span" ? TYPE_STYLE[row.span.type] : { label: row.kind === "input" ? "Input" : "Output", chip: "bg-sky-50 text-sky-700", bar: "bg-gray-900" };
+  const outcomes = row.kind === "span" ? describeOutcome(row.span) : [];
+  const flag = outcomes.find((o) => o.tone === "bad") ? "refused" : outcomes.find((o) => o.tone === "warn") ? "needs a human" : null;
+  const fallback = row.kind === "span" && row.span.fallbackReason;
+  const left = (row.offsetMs / total) * 100;
+  const width = Math.max(0.6, (row.durationMs / total) * 100);
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={`grid w-full grid-cols-[minmax(0,1fr)_140px] items-center gap-3 px-4 py-1.5 text-left text-sm transition-colors ${selected ? "bg-violet-50" : "hover:bg-gray-50"}`}
+    >
+      <span className="flex min-w-0 items-center gap-2" style={{ paddingLeft: row.level * 16 }}>
+        <span className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium ${style.chip}`}>{style.label}</span>
+        <span className={`truncate ${row.kind === "span" && row.span.type === "tool" ? "font-mono text-[13px]" : ""} ${row.kind === "span" && row.span.type === "model" ? "text-gray-500" : ""}`}>
+          {row.label}
+        </span>
+        {flag && <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[11px] ${flag === "refused" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"}`}>{flag}</span>}
+        {fallback && <span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800">fallback</span>}
+      </span>
+      <span className="relative h-2.5 rounded bg-gray-100" title={`+${fmtMs(row.offsetMs)} · ${fmtMs(row.durationMs)}`}>
+        <i
+          className={`anim-grow-x absolute inset-y-0 rounded ${style.bar}`}
+          style={{ left: `min(${left}%, calc(100% - 3px))`, width: `${width}%`, minWidth: 3, "--d": `${delayMs}ms` } as React.CSSProperties}
+        />
+      </span>
+    </button>
+  );
+}
+
+function Detail({ row, t }: { row: Row; t: LoaderData }) {
+  if (row.kind === "input") {
     return (
-      <Step dot={style.dot} title={title} meta={meta} compact>
-        <p className="text-xs text-gray-500">
-          {s.provider}/{s.model}
-          {s.tokens && ` · ${s.tokens.total} tokens (${s.tokens.input} in, ${s.tokens.output} out)`}
-          {s.fallbackReason && <span className="ml-1 rounded bg-amber-100 px-1 text-amber-800">fallback: {s.fallbackReason}</span>}
-          {s.error && <span className="ml-1 text-red-600">error: {s.error}</span>}
-        </p>
-      </Step>
+      <DetailShell title={row.label} chip="Input" offsetMs={0}>
+        <p className="whitespace-pre-wrap rounded-lg bg-gray-50 p-3 text-sm">{t.input}</p>
+      </DetailShell>
+    );
+  }
+  if (row.kind === "output") {
+    return (
+      <DetailShell title={row.label} chip="Output" offsetMs={t.durationMs}>
+        {t.status === "error" ? (
+          <p className="text-sm text-red-700">{t.error}</p>
+        ) : (
+          <p className="whitespace-pre-wrap rounded-lg bg-gray-50 p-3 text-sm">{t.finalOutput}</p>
+        )}
+        <p className="text-xs text-gray-500">This is what the customer saw. The checks above it come from the tools, not from this text.</p>
+      </DetailShell>
     );
   }
 
-  if (s.type === "agent" || s.type === "handoff") {
-    return <Step dot={style.dot} title={title} meta={meta} compact />;
-  }
-
-  // tool / approval / guardrail: girdi, çıktı ve öne çıkan karar.
-  const verdicts = describeOutcome(s);
+  const s = row.span;
+  const outcomes = describeOutcome(s);
+  const rule = s.type === "tool" ? RULE_SOURCE[s.name] : s.type === "approval" ? { where: "createReturnRequest › needsApproval", rule: "Refunds above 1,000 TRY pause the run until a team member decides." } : undefined;
   return (
-    <Step dot={style.dot} title={title} meta={meta}>
-      {verdicts.length > 0 && (
-        <ul className="mb-2 space-y-1">
-          {verdicts.map((v, i) => (
-            <li key={i} className={`rounded-md px-2 py-1 text-sm ${v.tone === "bad" ? "bg-red-50 text-red-800" : v.tone === "warn" ? "bg-amber-50 text-amber-900" : "bg-emerald-50 text-emerald-800"}`}>
-              {v.text}
+    <DetailShell title={row.label} chip={TYPE_STYLE[s.type].label} offsetMs={s.offsetMs} durationMs={s.durationMs} mono={s.type === "tool"}>
+      {s.type === "model" && (
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
+          <dt className="text-gray-500">Provider</dt>
+          <dd className="min-w-0 break-words">{s.provider}/{s.model}</dd>
+          {s.tokens && (
+            <>
+              <dt className="text-gray-500">Tokens</dt>
+              <dd className="tabular-nums">{s.tokens.total} ({s.tokens.input} in, {s.tokens.output} out)</dd>
+            </>
+          )}
+          {s.fallbackReason && (
+            <>
+              <dt className="text-gray-500">Fallback</dt>
+              <dd className="text-amber-800">{s.fallbackReason}</dd>
+            </>
+          )}
+        </dl>
+      )}
+      {s.type === "handoff" && <p className="text-sm text-gray-600">The conversation moved to another agent. Earlier tool messages are filtered out on the way (removeAllTools), so the new agent has to call its own tools instead of guessing.</p>}
+      {s.type === "agent" && <p className="text-sm text-gray-600">The {s.name} agent started. The model, tool and approval steps below it belong to this agent.</p>}
+
+      {outcomes.length > 0 && (
+        <ul className="flex flex-col gap-1">
+          {outcomes.map((o, i) => (
+            <li key={i} className={`anim-pop rounded-lg px-2.5 py-1.5 text-sm ${TONE[o.tone]}`} style={{ "--d": `${120 + i * 100}ms` } as React.CSSProperties}>
+              {o.text}
             </li>
           ))}
         </ul>
       )}
-      {s.error && <p className="mb-2 text-sm text-red-700">Error: {s.error}</p>}
+      {rule && (
+        <div className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-sm text-violet-900">
+          <p className="font-medium">Rule enforced in code</p>
+          <p className="mt-0.5">{rule.rule}</p>
+          <code className="mt-1 block text-xs text-violet-700">{rule.where}</code>
+        </div>
+      )}
+      {s.error && <p className="text-sm text-red-700">Error: {s.error}</p>}
       <Json label="Input" value={s.input} />
       <Json label="Output" value={s.output} />
-    </Step>
+    </DetailShell>
   );
 }
 
-// ─── Küçük parçalar ────────────────────────────────────────────────────────
-
-function Step({ dot, title, meta, children, compact }: { dot: string; title: React.ReactNode; meta: string; children?: React.ReactNode; compact?: boolean }) {
+function DetailShell({ title, chip, offsetMs, durationMs, mono, children }: { title: string; chip: string; offsetMs: number; durationMs?: number; mono?: boolean; children: React.ReactNode }) {
   return (
-    <li className="relative">
-      <span className={`absolute -left-[27px] top-2 h-3 w-3 rounded-full ring-4 ring-gray-50 ${dot}`} />
-      <div className={compact ? "py-1" : "rounded-xl border border-gray-200 bg-white p-3"}>
-        <div className="flex items-start justify-between gap-3 text-sm">
-          <div className="min-w-0">{title}</div>
-          <span className="shrink-0 font-mono text-xs text-gray-400">{meta}</span>
-        </div>
-        {children && <div className="mt-1.5">{children}</div>}
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600">{chip}</span>
+        <h2 className={`min-w-0 break-words font-semibold ${mono ? "font-mono text-sm" : ""}`}>{title}</h2>
+        <span className="ml-auto font-mono text-xs text-gray-400">
+          +{fmtMs(offsetMs)}{durationMs ? ` · ${fmtMs(durationMs)}` : ""}
+        </span>
       </div>
-    </li>
+      {children}
+    </div>
   );
 }
 
 function Json({ label, value }: { label: string; value: unknown }) {
   if (value === undefined) return null;
   return (
-    <details className="group text-xs">
-      <summary className="cursor-pointer select-none text-gray-500 hover:text-gray-800">{label}</summary>
-      <pre className="mt-1 max-h-80 overflow-auto rounded-lg bg-gray-50 p-2 text-[11px] leading-relaxed text-gray-800">
-        {JSON.stringify(value, null, 2)}
-      </pre>
-    </details>
+    <div className="text-xs">
+      <p className="text-gray-500">{label}</p>
+      <pre className="mt-1 max-h-80 overflow-auto rounded-lg bg-gray-50 p-2 text-[11px] leading-relaxed text-gray-800">{JSON.stringify(value, null, 2)}</pre>
+    </div>
   );
 }
 
@@ -241,4 +361,3 @@ function StatusPill({ status, interrupted }: { status: "ok" | "error"; interrupt
     </>
   );
 }
-
