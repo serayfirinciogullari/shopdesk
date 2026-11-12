@@ -61,6 +61,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <span className="font-semibold">ShopDesk</span>
         <div className="flex gap-4 text-gray-600">
           <Link to="/inbox" className="hover:text-gray-900">Inbox</Link>
+          <Link to="/tests" className="hover:text-gray-900">Tests</Link>
           <Link to="/chat" className="hover:text-gray-900">New chat</Link>
         </div>
       </nav>
@@ -94,7 +95,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <Link to="/inbox" className="rounded-full border border-gray-300 bg-white px-5 py-2 font-medium hover:bg-gray-50">Open the team Inbox</Link>
           </div>
           <dl className="anim-rise mt-9 grid grid-cols-2 gap-4 border-t border-gray-200 pt-4 sm:flex sm:gap-0 sm:divide-x sm:divide-gray-200" style={d(1400)}>
-            <Proof value={<><CountUp to={evalPass} delayMs={1500} />/{evalTotal}</>} label="eval scenarios pass" />
+            <Proof value={<Link to="/tests" className="hover:underline"><CountUp to={evalPass} delayMs={1500} />/{evalTotal}</Link>} label="eval scenarios pass" />
             <Proof value={<CountUp to={0} delayMs={1590} />} label="wrong refunds, any round" />
             <Proof value={<><CountUp to={1000} delayMs={1680} /> TRY</>} label="human-approval limit" />
             <Proof value={<CountUp to={3} delayMs={1770} />} label="agents with handoffs" />

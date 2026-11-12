@@ -20,16 +20,16 @@
         "detail": "https://track.example.com/TR1042SD"
       }
     ],
-    "tokens": 1479,
+    "tokens": 1793,
     "requests": 3,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "1a810ed9-bb61-4eed-9379-f2cedd1f5883"
+      "a659122c-083a-4f1b-a779-1075a774aa42"
     ],
     "notes": [],
-    "at": "2026-11-11T18:24:45.330Z"
+    "at": "2026-11-12T10:17:55.885Z"
   },
   "2": {
     "id": 2,
@@ -55,16 +55,16 @@
         "pass": true
       }
     ],
-    "tokens": 1477,
+    "tokens": 1683,
     "requests": 3,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "ab4cfe15-39fb-40f3-87d4-ccbf3c8ec390"
+      "f4c8198e-7b77-46b6-aaee-1d0eb19ad4a5"
     ],
     "notes": [],
-    "at": "2026-11-11T18:24:48.190Z"
+    "at": "2026-11-12T10:17:57.348Z"
   },
   "3": {
     "id": 3,
@@ -89,16 +89,16 @@
         "pass": true
       }
     ],
-    "tokens": 940,
+    "tokens": 964,
     "requests": 2,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "bde84f49-c097-49db-be2c-4a3343f16998"
+      "250c2661-9307-4376-9e5d-fc43ee63c17d"
     ],
     "notes": [],
-    "at": "2026-11-11T18:24:50.933Z"
+    "at": "2026-11-12T10:17:58.131Z"
   },
   "4": {
     "id": 4,
@@ -120,16 +120,16 @@
         "pass": true
       }
     ],
-    "tokens": 1602,
+    "tokens": 1674,
     "requests": 3,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "52f3ebdc-ac65-464f-9904-a354a071fe3a"
+      "4b10880a-3ee7-4381-9d65-9fc0945b9ac7"
     ],
     "notes": [],
-    "at": "2026-11-11T19:08:43.646Z"
+    "at": "2026-11-12T10:18:59.461Z"
   },
   "5": {
     "id": 5,
@@ -151,16 +151,16 @@
         "pass": true
       }
     ],
-    "tokens": 4235,
+    "tokens": 4509,
     "requests": 4,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "c689c7b1-fbaf-4006-bcfe-2619d6ccc9cc"
+      "2d607bb9-fa9e-4ef9-b357-683be1636c39"
     ],
     "notes": [],
-    "at": "2026-11-12T09:53:33.176Z"
+    "at": "2026-11-12T10:19:02.419Z"
   },
   "6": {
     "id": 6,
@@ -175,7 +175,7 @@
       {
         "name": "checkReturnEligibility: iade süresi doldu",
         "pass": true,
-        "detail": "SNK-WHT-40: Return window closed: delivered 45 days ago (2026-09-27); returns are accepted within 30 days of delivery (deadline was 2026-10-27)."
+        "detail": "SNK-WHT-40: Return window closed: delivered 45 days ago (2026-09-28); returns are accepted within 30 days of delivery (deadline was 2026-10-28)."
       },
       {
         "name": "createReturnRequest iade açmadı",
@@ -190,16 +190,16 @@
         "pass": true
       }
     ],
-    "tokens": 2957,
+    "tokens": 2787,
     "requests": 3,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "c5c19fbc-8cb5-464f-8586-67404d8456a3"
+      "1bec5a54-c3b6-45dc-b266-dffac0a9171b"
     ],
     "notes": [],
-    "at": "2026-11-11T18:25:57.508Z"
+    "at": "2026-11-12T10:20:05.666Z"
   },
   "7": {
     "id": 7,
@@ -229,16 +229,16 @@
         "pass": true
       }
     ],
-    "tokens": 3450,
+    "tokens": 2803,
     "requests": 3,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "d1fd42ca-c98d-426b-a6ea-95e24fe78316"
+      "bf74e152-6db7-4e18-a353-eb94793158c5"
     ],
     "notes": [],
-    "at": "2026-11-12T09:54:35.816Z"
+    "at": "2026-11-12T10:20:08.034Z"
   },
   "8": {
     "id": 8,
@@ -264,16 +264,16 @@
         "pass": true
       }
     ],
-    "tokens": 3112,
+    "tokens": 3118,
     "requests": 3,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "65a06bef-a22a-40a9-a51c-4196b8098475"
+      "97f160e5-a26f-4155-9b43-9fef08d8d081"
     ],
     "notes": [],
-    "at": "2026-11-11T18:27:01.705Z"
+    "at": "2026-11-12T10:21:08.305Z"
   },
   "9": {
     "id": 9,
@@ -299,16 +299,16 @@
         "pass": true
       }
     ],
-    "tokens": 2693,
+    "tokens": 2979,
     "requests": 3,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "84be5586-8def-4763-8659-e6f9953359ca"
+      "d65dd277-72c9-4e23-9014-9d0dcd4d62e7"
     ],
     "notes": [],
-    "at": "2026-11-11T18:28:00.318Z"
+    "at": "2026-11-12T10:21:11.038Z"
   },
   "10": {
     "id": 10,
@@ -341,19 +341,19 @@
       {
         "name": "cevaptaki tutar = trace'teki tutar",
         "pass": true,
-        "detail": "399 TRY"
+        "detail": "399 TRY"
       }
     ],
-    "tokens": 4090,
+    "tokens": 4062,
     "requests": 4,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "b3ac10d0-143e-46e4-aa95-9762d7b794d2"
+      "cc90dfc5-828f-4442-823d-ccfdaba4339f"
     ],
     "notes": [],
-    "at": "2026-11-12T09:54:38.652Z"
+    "at": "2026-11-12T10:22:11.746Z"
   },
   "11": {
     "id": 11,
@@ -390,19 +390,19 @@
       {
         "name": "cevaptaki tutar = trace'teki tutar",
         "pass": true,
-        "detail": "3 649 TRY"
+        "detail": "3649 TRY"
       }
     ],
-    "tokens": 4294,
+    "tokens": 4905,
     "requests": 4,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "37fca341-459d-4ffb-ad96-2299ddb97087"
+      "74c88106-d53d-4e7a-bbd6-2d56ba013bd0"
     ],
     "notes": [],
-    "at": "2026-11-11T18:35:33.091Z"
+    "at": "2026-11-12T10:23:16.185Z"
   },
   "12": {
     "id": 12,
@@ -427,21 +427,21 @@
       {
         "name": "onay sonrası cevaptaki tutar = trace'teki tutar",
         "pass": true,
-        "detail": "3649 TRY"
+        "detail": "3649 TRY"
       }
     ],
-    "tokens": 1389,
+    "tokens": 1565,
     "requests": 1,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "93530d00-5f24-4519-92bd-bb5c62bbd87a"
+      "0f637139-8275-4d8d-b18c-8d6e8f419ddb"
     ],
     "notes": [
       "Inbox: Refund of 3649 TRY approved. The agent resumed the run and told the customer."
     ],
-    "at": "2026-11-11T18:36:42.677Z"
+    "at": "2026-11-12T10:24:18.741Z"
   },
   "13": {
     "id": 13,
@@ -469,7 +469,7 @@
       {
         "name": "cevaptaki tutar = trace'teki tutar",
         "pass": true,
-        "detail": "1199 TRY"
+        "detail": "tutar söylenmedi"
       },
       {
         "name": "ticket: approved, resumed_run (run kaldığı yerden sürdü)",
@@ -489,27 +489,27 @@
       {
         "name": "onay sonrası cevaptaki tutar = trace'teki tutar",
         "pass": true,
-        "detail": "1199 TRY"
+        "detail": "1199 TRY"
       }
     ],
-    "tokens": 5780,
+    "tokens": 5481,
     "requests": 5,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "ecb324eb-a59b-41e0-b08c-8db931d5c328",
-      "99d59c28-7312-4cf0-8f4d-f64bf7913493"
+      "c4d837ce-3e57-4c76-90bd-7da35d1358e2",
+      "bb8d7afa-944e-4578-a4f9-163baaa5af93"
     ],
     "notes": [
       "Inbox: Refund of 1199 TRY approved. The agent resumed the run and told the customer."
     ],
-    "at": "2026-11-11T19:10:08.898Z"
+    "at": "2026-11-12T10:24:23.496Z"
   },
   "14": {
     "id": 14,
     "pass": true,
-    "outcome": "handoff Triage → Returns; checkReturnEligibility → SNK-WHT-40 uygun değil (Return window closed); escalateToHuman → escalated:true",
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → SNK-WHT-40 uygun değil (Return window closed)",
     "checks": [
       {
         "name": "run'lar hatasız bitti",
@@ -529,21 +529,21 @@
         "pass": true
       }
     ],
-    "tokens": 5940,
-    "requests": 4,
+    "tokens": 4036,
+    "requests": 3,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "0d50268e-d3d3-43fe-9fc5-51c3235ef2bb"
+      "1c162b2e-2b6f-434a-8400-f541db837988"
     ],
     "notes": [],
-    "at": "2026-11-11T18:31:40.998Z"
+    "at": "2026-11-12T10:25:27.123Z"
   },
   "15": {
     "id": 15,
     "pass": true,
-    "outcome": "handoff Triage → Returns; checkReturnEligibility → JKT-OLV-M uygun, JEAN-BLU-32 uygun",
+    "outcome": "handoff Triage → Returns; checkReturnEligibility → JKT-OLV-M uygun, JEAN-BLU-32 uygun; approval createReturnRequest: pending_human_approval 3649 TRY",
     "checks": [
       {
         "name": "run'lar hatasız bitti",
@@ -563,16 +563,16 @@
         "pass": true
       }
     ],
-    "tokens": 3011,
-    "requests": 3,
+    "tokens": 4716,
+    "requests": 4,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "a89298e7-89cc-4115-87e7-65d731b222ff"
+      "df4029af-e6d8-4f01-910c-8a30a533ba52"
     ],
     "notes": [],
-    "at": "2026-11-11T18:36:50.956Z"
+    "at": "2026-11-12T10:26:31.461Z"
   },
   "16": {
     "id": 16,
@@ -603,16 +603,16 @@
         "pass": true
       }
     ],
-    "tokens": 2303,
+    "tokens": 1727,
     "requests": 2,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "235fdd81-916d-4563-9034-a26a139327a4"
+      "d3877bd9-6935-48de-b3c8-336d253c4e69"
     ],
     "notes": [],
-    "at": "2026-11-11T18:33:52.139Z"
+    "at": "2026-11-12T10:27:33.891Z"
   },
   "17": {
     "id": 17,
@@ -634,16 +634,16 @@
         "pass": true
       }
     ],
-    "tokens": 1836,
+    "tokens": 1706,
     "requests": 3,
     "providers": [
       "groq",
       "gemini"
     ],
     "runIds": [
-      "6232a1ff-84e3-42b4-a4ca-3f8d002706b8"
+      "1f2cf4ee-aeb3-4fe4-ae61-1f1d92fd4e2f"
     ],
     "notes": [],
-    "at": "2026-11-11T19:11:18.270Z"
+    "at": "2026-11-12T10:27:37.488Z"
   }
 }

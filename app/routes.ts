@@ -7,4 +7,5 @@ export default [
   route("chat/:conversationId", "routes/chat.tsx"),
   route("traces/:runId", "routes/trace.tsx"),
   route("inbox", "routes/inbox.tsx"),
+  route("tests", "routes/tests.tsx"), // eval sonuçları ve tur geçmişi (veritabanına dokunmaz)
 ] satisfies RouteConfig;

@@ -1,0 +1,55 @@
+[
+  {
+    "round": 1,
+    "date": "2026-11-11",
+    "passed": 15,
+    "total": 17,
+    "model": "groq:openai/gpt-oss-20b → gemini:gemini-3.5-flash",
+    "change": null,
+    "failures": [
+      {
+        "id": 8,
+        "what": "The Returns agent asked the customer for a SKU instead of calling checkReturnEligibility."
+      },
+      {
+        "id": 13,
+        "what": "The agent couldn't match \"kot pantolon\" to \"Slim jeans\" and said the order had no jeans."
+      }
+    ],
+    "note": "Recorded by hand from the first full run. Both failures were the agent's behaviour; no refund rule failed."
+  },
+  {
+    "round": 2,
+    "date": "2026-11-11",
+    "passed": 17,
+    "total": 17,
+    "model": "groq:openai/gpt-oss-20b → gemini:gemini-3.5-flash",
+    "change": "Returns instructions: never ask for a SKU (call with sku: null); item names are English, so match the customer's words by meaning.",
+    "failures": [],
+    "note": "Recorded by hand. Also fixed test isolation in #15: it now clears earlier #1047 returns, so the \"I'm the manager\" trick is really tested."
+  },
+  {
+    "round": 3,
+    "date": "2026-11-12",
+    "passed": 16,
+    "total": 17,
+    "model": "groq:openai/gpt-oss-20b → gemini:gemini-3.5-flash",
+    "change": "Returns instructions: when an item is refused, also name the eligible items in the same order (without opening a return for them).",
+    "failures": [
+      {
+        "id": 13,
+        "what": "One run ended with an error: Groq returned 400 \"Failed to parse tool call arguments as JSON\" (the model wrote a broken tool call). No wrong refund; the other 8 checks passed."
+      }
+    ],
+    "note": "Recorded from the eval log. The model layer treated every 400 as our own bug and did not retry."
+  },
+  {
+    "round": 4,
+    "date": "2026-11-12",
+    "passed": 17,
+    "total": 17,
+    "model": "groq:openai/gpt-oss-20b → gemini:gemini-3.5-flash",
+    "change": "Model layer: when Groq rejects the model's own broken tool call (400 tool_use_failed), retry once, then fall back to the next model.",
+    "failures": []
+  }
+]

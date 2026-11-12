@@ -13,6 +13,7 @@ export function Nav() {
       <div className="flex gap-4 text-gray-600">
         <Link to="/chat" reloadDocument className="underline">New chat</Link>
         <Link to="/inbox" className="underline">Inbox</Link>
+        <Link to="/tests" className="underline">Tests</Link>
       </div>
     </nav>
   );

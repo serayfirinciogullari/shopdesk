@@ -150,6 +150,42 @@ async function writeOutputs(results: Map<number, Result>, runningId?: number) {
   await writeFile(`${OUT_DIR}/results.json`, JSON.stringify(Object.fromEntries(results), null, 2));
 }
 
+/**
+ * Tur geçmişi (eval/rounds.json). Başarısızlar silinmez: her tur kendi kaydıyla kalır.
+ * `change` (bu turdan önce ne değişti) elle doldurulur; script null yazar.
+ */
+export interface Round {
+  round: number;
+  date: string; // YYYY-MM-DD
+  passed: number;
+  total: number;
+  model?: string;
+  change: string | null;
+  failures: { id: number; what: string }[];
+  note?: string;
+}
+
+async function appendRound(ran: Result[]) {
+  const file = `${OUT_DIR}/rounds.json`;
+  let rounds: Round[] = [];
+  try {
+    rounds = JSON.parse(await readFile(file, "utf8")) as Round[];
+  } catch {
+    // ilk tur
+  }
+  rounds.push({
+    round: (rounds.at(-1)?.round ?? 0) + 1,
+    date: new Date().toISOString().slice(0, 10),
+    passed: ran.filter((r) => r.pass).length,
+    total: ran.length,
+    model: chainLabel().replaceAll("`", ""),
+    change: null,
+    failures: ran.filter((r) => !r.pass).map((r) => ({ id: r.id, what: r.checks.filter((c) => !c.pass).map((c) => c.name).join("; ") || r.outcome })),
+  });
+  await writeFile(file, JSON.stringify(rounds, null, 2) + "\n");
+  console.log(`   Tur ${rounds.at(-1)!.round} kaydedildi: ${file}`);
+}
+
 async function loadPrevious(): Promise<Map<number, Result>> {
   try {
     const raw = JSON.parse(await readFile(`${OUT_DIR}/results.json`, "utf8")) as Record<string, Result>;
@@ -247,6 +283,8 @@ try {
   const ran = selected.map((s) => results.get(s.id)!);
   const failed = ran.filter((r) => !r.pass);
   console.log(`\n${ran.length - failed.length}/${ran.length} geçti. Sonuçlar: ${OUT_DIR}/results.json · ${OUT_DIR}/RESULTS.md`);
+  // Tam tur (--only yok) tur geçmişine eklenir; /tests sayfası turları buradan gösterir.
+  if (!only) await appendRound(ran);
   if (failed.length) exitCode = 1;
 } finally {
   await closeDb();
