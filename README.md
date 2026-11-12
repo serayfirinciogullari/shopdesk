@@ -6,7 +6,7 @@ The agent can't be talked into a wrong refund, because the refund rules live in 
 
 **Live demo:** https://shopdesk-olive.vercel.app. Open it and try the buttons on the home page.
 
-![ShopDesk demo: a final-sale return is refused, a 3,649 TRY return waits for human approval, and the trace shows each step](docs/demo.gif)
+![ShopDesk demo: the home page replays a real prompt-injection run, a final-sale return is refused and traced, and a 3,649 TRY return waits for approval in the Inbox before the paused run resumes](docs/demo.gif)
 
 > Built with the OpenAI Agents SDK, running OpenAI's open-weight gpt-oss model on Groq's free tier. The model is deliberately small and free: safety comes from rules enforced in code, not from the model.
 
