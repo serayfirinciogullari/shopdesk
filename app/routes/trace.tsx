@@ -10,6 +10,7 @@ import type { Route } from "./+types/trace";
 import { collections } from "~/lib/db.server";
 import type { Span } from "~/lib/types";
 import { Nav, TicketPill } from "~/components/ui";
+import { describeOutcome, fmtMs } from "~/lib/trace-view";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: `Trace ${params.runId.slice(0, 8)} · ShopDesk` }];
@@ -192,32 +193,6 @@ function SpanStep({ s }: { s: UISpan }) {
   );
 }
 
-type Outcome = { tone: "good" | "bad" | "warn"; text: string };
-
-/**
- * Çıktıdaki kararı tek satırda öne çıkarır (ör. "Field jacket: not eligible — Final sale item").
- * Ham JSON yine altta duruyor; bu sadece okumayı kolaylaştırır.
- */
-function describeOutcome(s: UISpan): Outcome[] {
-  const o = s.output as Record<string, any> | undefined;
-  if (!o || typeof o !== "object") return [];
-  if (s.type === "approval") {
-    if (o.status === "pending_human_approval") return [{ tone: "warn", text: `Paused for human approval: ${o.amount} TRY is above the ${o.threshold} TRY limit. Tool did not run.` }];
-    if (o.status === "approved_by_human") return [{ tone: "good", text: "Approved by a team member in the Inbox. Resuming the paused run." }];
-    return [{ tone: "bad", text: `Not executed: ${o.reason ?? o.status}` }];
-  }
-  const out: Outcome[] = [];
-  if (o.found === false) out.push({ tone: "bad", text: `No matching order: ${o.reason}` });
-  if (Array.isArray(o.items) && o.items.some((i: any) => typeof i?.eligible === "boolean")) {
-    for (const i of o.items) out.push({ tone: i.eligible ? "good" : "bad", text: `${i.name}: ${i.eligible ? "eligible" : "not eligible"}: ${i.reason}` });
-  }
-  if (o.created === true) out.push({ tone: "good", text: `Return ${o.status}: ${o.refund}${o.approvedBy ? ` (approved by ${o.approvedBy})` : ""}` });
-  if (o.created === false && o.found !== false) out.push({ tone: "bad", text: `Return not created: ${o.reason}${Array.isArray(o.problems) ? ` ${o.problems.join("; ")}` : ""}` });
-  if (o.escalated === true) out.push({ tone: "warn", text: "Handed to a human (ticket opened)." });
-  if (o.found === true && typeof o.status === "string" && !o.items?.[0]?.sku) out.push({ tone: "good", text: `Order ${o.orderNumber}: ${o.status}` });
-  return out;
-}
-
 // ─── Küçük parçalar ────────────────────────────────────────────────────────
 
 function Step({ dot, title, meta, children, compact }: { dot: string; title: React.ReactNode; meta: string; children?: React.ReactNode; compact?: boolean }) {
@@ -267,6 +242,3 @@ function StatusPill({ status, interrupted }: { status: "ok" | "error"; interrupt
   );
 }
 
-function fmtMs(ms: number) {
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms`;
-}
