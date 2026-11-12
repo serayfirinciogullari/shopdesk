@@ -151,16 +151,16 @@
         "pass": true
       }
     ],
-    "tokens": 4173,
+    "tokens": 4235,
     "requests": 4,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "cbb6da87-4295-4c31-a598-d8422c506c7b"
+      "c689c7b1-fbaf-4006-bcfe-2619d6ccc9cc"
     ],
     "notes": [],
-    "at": "2026-11-11T19:08:56.954Z"
+    "at": "2026-11-12T09:53:33.176Z"
   },
   "6": {
     "id": 6,
@@ -229,16 +229,16 @@
         "pass": true
       }
     ],
-    "tokens": 2865,
+    "tokens": 3450,
     "requests": 3,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "6bcdb7fc-010a-4684-9e71-095f848f4613"
+      "d1fd42ca-c98d-426b-a6ea-95e24fe78316"
     ],
     "notes": [],
-    "at": "2026-11-11T18:26:55.150Z"
+    "at": "2026-11-12T09:54:35.816Z"
   },
   "8": {
     "id": 8,
@@ -344,16 +344,16 @@
         "detail": "399 TRY"
       }
     ],
-    "tokens": 4900,
+    "tokens": 4090,
     "requests": 4,
     "providers": [
       "groq"
     ],
     "runIds": [
-      "6373f0f9-0718-4e0c-83da-0b81154375d9"
+      "b3ac10d0-143e-46e4-aa95-9762d7b794d2"
     ],
     "notes": [],
-    "at": "2026-11-11T18:28:07.371Z"
+    "at": "2026-11-12T09:54:38.652Z"
   },
   "11": {
     "id": 11,
